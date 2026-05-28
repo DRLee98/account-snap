@@ -58,8 +58,8 @@
 		E2CA16262FC7C35500684F47 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		E2CA163A2FC7C37F00684F47 /* AccountSnap.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AccountSnap.entitlements; path = AccountSnap/AccountSnap.entitlements; sourceTree = "<group>"; };
 		E2CA163B2FC7C3A600684F47 /* AccountSnapWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AccountSnapWidgetExtension.entitlements; sourceTree = "<group>"; };
-		E2CA163C2FC7C63E00684F47 /* AppGroup.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppGroup.m; sourceTree = "<group>"; };
-		E2CA163D2FC7C63E00684F47 /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
+		E2CA163C2FC7C63E00684F47 /* AppGroup.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = AppGroup.m; path = AccountSnap/AppGroup.m; sourceTree = "<group>"; };
+		E2CA163D2FC7C63E00684F47 /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppGroup.swift; path = AccountSnap/AppGroup.swift; sourceTree = "<group>"; };
 		E2CA16402FC7C64F00684F47 /* AccountSnap-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AccountSnap-Bridging-Header.h"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
