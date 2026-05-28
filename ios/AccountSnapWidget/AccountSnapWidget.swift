@@ -84,8 +84,7 @@ struct SmallShortcutView: View {
             Image(systemName: "camera.fill")
                 .font(.system(size: 36, weight: .semibold))
                 .foregroundColor(.accentColor)
-            Text("계좌 촬영").font(.headline)
-            Text("탭하여 OCR").font(.caption2).foregroundColor(.secondary)
+            Text("이체 계좌 촬영").font(.headline)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .widgetURL(cameraURL)
@@ -149,9 +148,9 @@ struct LargeView: View {
                     Image(systemName: "camera.fill")
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundColor(.accentColor)
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("계좌 촬영").font(.subheadline).bold()
-                        Text("탭하여 OCR로 인식").font(.caption2).foregroundColor(.secondary)
+                        Text("이체할 이체 계좌 촬영하기").font(.caption2).foregroundColor(.secondary)
                     }
                     Spacer()
                 }
@@ -218,8 +217,8 @@ struct AccountSnapWidget: Widget {
                 AccountSnapWidgetEntryView(entry: entry).padding().background()
             }
         }
-        .configurationDisplayName("Account Snap")
-        .description("계좌 촬영 단축 + 최근/즐겨찾기")
+        .configurationDisplayName("스냅넘버")
+        .description("이체 계좌 촬영 단축 + 최근/즐겨찾기")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

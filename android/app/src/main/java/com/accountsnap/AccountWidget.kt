@@ -235,11 +235,11 @@ private fun ShutterBar() {
             Spacer(modifier = GlanceModifier.width(10.dp))
             Column {
                 Text(
-                    "계좌 촬영",
+                    "이체 계좌 촬영",
                     style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                 )
                 Text(
-                    "탭하여 OCR로 인식",
+                    "이체할 이체 계좌 촬영하기",
                     style = TextStyle(
                         fontSize = 10.sp,
                         color = GlanceTheme.colors.onSurfaceVariant,
