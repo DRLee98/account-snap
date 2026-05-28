@@ -41,7 +41,7 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
   override func bundleURL() -> URL? {
 #if DEBUG
     // 8082: jangboo-rn-monorepo Metro가 8081 점거 시 충돌 회피
-    URL(string: "http://localhost:8082/index.bundle?platform=ios&dev=true&minify=false")
+    URL(string: "http://192.168.21.24:8082/index.bundle?platform=ios&dev=true&minify=false")
 #else
     Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif

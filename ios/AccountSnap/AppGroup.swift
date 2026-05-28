@@ -3,7 +3,7 @@ import React
 
 @objc(AppGroup)
 class AppGroup: NSObject {
-  private static let suiteName = "group.kr.account-snap"
+  private static let suiteName = "group.com.drlee98.accountsnap"
   private let suite = UserDefaults(suiteName: AppGroup.suiteName)
 
   @objc static func requiresMainQueueSetup() -> Bool { false }

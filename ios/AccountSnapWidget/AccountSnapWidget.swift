@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-private let appGroupId = "group.kr.account-snap"
+private let appGroupId = "group.com.drlee98.accountsnap"
 private let storageKey = "poc:lastAccount"
 
 private func loadAccount() -> String {

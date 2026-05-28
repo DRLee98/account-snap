@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Button,
   Linking,
   StyleSheet,
@@ -16,26 +18,8 @@ import {
 } from 'react-native-vision-camera';
 import ImagePicker from 'react-native-image-crop-picker';
 import { createAccount } from '../services/storage';
+import { recognize, parseAccount } from '../services/ocr';
 import { RootStackParamList } from '../navigation/types';
-
-const MOCK_BANKS = [
-  { name: '국민은행', code: '004' },
-  { name: '신한은행', code: '088' },
-  { name: '우리은행', code: '020' },
-  { name: '카카오뱅크', code: '090' },
-];
-
-const mockOcrAndCreate = (sourceImageUri: string) => {
-  // TODO(OCR-001/002): CLOVA OCR 호출 + 파싱으로 교체
-  const bank = MOCK_BANKS[Math.floor(Math.random() * MOCK_BANKS.length)];
-  const acctNum = String(Math.floor(Math.random() * 9e13) + 1e13);
-  return createAccount({
-    accountNumber: acctNum,
-    bankName: bank.name,
-    bankCode: bank.code,
-    sourceImageUri,
-  });
-};
 
 export default function CameraScreen() {
   const navigation =
@@ -43,25 +27,59 @@ export default function CameraScreen() {
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
   const cameraRef = useRef<Camera>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!hasPermission) requestPermission();
   }, [hasPermission, requestPermission]);
 
-  const cropAndGoToResult = async (sourceUri: string) => {
+  const cropAndProcess = async (sourceUri: string) => {
+    let croppedPath: string;
     try {
       const cropped = await ImagePicker.openCropper({
         path: sourceUri,
         mediaType: 'photo',
-        width: 1200,
-        height: 800,
+        width: 1600,
+        height: 1000,
         freeStyleCropEnabled: true,
         cropperToolbarTitle: '계좌 영역 자르기',
       });
-      const account = mockOcrAndCreate(cropped.path);
-      navigation.replace('Result', { accountId: account.id });
+      croppedPath = cropped.path;
     } catch {
-      // cancelled
+      return; // cropper cancelled
+    }
+
+    setLoading(true);
+    try {
+      const response = await recognize(croppedPath);
+      const parsed = parseAccount(response);
+
+      if (!parsed) {
+        Alert.alert(
+          'OCR 결과 없음',
+          '계좌번호를 찾지 못했어요. 더 잘 보이게 다시 촬영해주세요.',
+        );
+        return;
+      }
+
+      const ocrRawText = response.images[0]?.fields
+        .map(f => f.inferText)
+        .join(' ');
+
+      const account = createAccount({
+        accountNumber: parsed.accountNumber,
+        bankName: parsed.bankName || '(은행 미확인)',
+        bankCode: parsed.bankCode,
+        holderName: parsed.holderName,
+        sourceImageUri: croppedPath,
+        ocrRawText,
+      });
+
+      navigation.replace('Result', { accountId: account.id });
+    } catch (e: any) {
+      Alert.alert('OCR 에러', e?.message ?? String(e));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,17 +89,26 @@ export default function CameraScreen() {
     const path = photo.path.startsWith('file://')
       ? photo.path
       : `file://${photo.path}`;
-    await cropAndGoToResult(path);
+    await cropAndProcess(path);
   };
 
   const handleGallery = async () => {
     try {
       const image = await ImagePicker.openPicker({ mediaType: 'photo' });
-      await cropAndGoToResult(image.path);
+      await cropAndProcess(image.path);
     } catch {
       // cancelled
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingText}>계좌 정보를 읽고 있어요...</Text>
+      </View>
+    );
+  }
 
   if (!hasPermission) {
     return (
@@ -147,6 +174,7 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#fff',
   },
+  loadingText: { marginTop: 14, color: '#666', fontSize: 14 },
   title: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
   hint: { fontSize: 13, color: '#666', textAlign: 'center' },
   spacer: { height: 20 },
