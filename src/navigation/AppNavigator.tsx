@@ -27,16 +27,20 @@ const linking: LinkingOptions<RootStackParamList> = {
 export default function AppNavigator() {
   return (
     <NavigationContainer linking={linking}>
-      <Stack.Navigator initialRouteName="AccountList">
-        <Stack.Screen
-          name="AccountList"
-          component={AccountListScreen}
-          options={{ title: 'Account Snap' }}
-        />
+      <Stack.Navigator initialRouteName="Camera">
         <Stack.Screen
           name="Camera"
           component={CameraScreen}
-          options={{ title: '계좌 촬영' }}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AccountList"
+          component={AccountListScreen}
+          options={{
+            presentation: 'modal',
+            title: '계좌 목록',
+            animation: 'slide_from_bottom',
+          }}
         />
         <Stack.Screen
           name="Result"

@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 private let appGroupId = "group.com.drlee98.accountsnap"
 private let keyAccounts = "widget:accounts"
@@ -8,6 +9,23 @@ private let keyLastUsedId = "widget:lastUsedId"
 private let cameraURL = URL(string: "accountsnap://camera")!
 private func copyURL(_ id: String) -> URL {
     URL(string: "accountsnap://copy/\(id)")!
+}
+
+/// iOS 17+에서는 App Intent로 앱을 띄우지 않고 즉시 클립보드 복사,
+/// iOS 16 이하는 deep link fallback (앱 열리며 RN이 복사 처리)
+@ViewBuilder
+private func copyTrigger<Content: View>(for a: WidgetAccount,
+                                        @ViewBuilder content: () -> Content) -> some View {
+    if #available(iOS 17.0, *) {
+        Button(intent: CopyAccountIntent(accountId: a.id)) {
+            content()
+        }
+        .buttonStyle(.plain)
+    } else {
+        Link(destination: copyURL(a.id)) {
+            content()
+        }
+    }
 }
 
 struct WidgetAccount: Identifiable, Decodable {
@@ -63,7 +81,9 @@ private func formatAccountNumber(_ raw: String) -> String {
 struct SmallShortcutView: View {
     var body: some View {
         VStack(spacing: 8) {
-            Text("📷").font(.system(size: 44))
+            Image(systemName: "camera.fill")
+                .font(.system(size: 36, weight: .semibold))
+                .foregroundColor(.accentColor)
             Text("계좌 촬영").font(.headline)
             Text("탭하여 OCR").font(.caption2).foregroundColor(.secondary)
         }
@@ -78,8 +98,10 @@ struct MediumView: View {
     var body: some View {
         HStack(spacing: 14) {
             Link(destination: cameraURL) {
-                VStack(spacing: 4) {
-                    Text("📷").font(.system(size: 30))
+                VStack(spacing: 6) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(.accentColor)
                     Text("촬영").font(.caption).bold()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -89,7 +111,7 @@ struct MediumView: View {
             .frame(width: 90)
 
             if let a = entry.lastUsed {
-                Link(destination: copyURL(a.id)) {
+                copyTrigger(for: a) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("최근 추출").font(.caption2).foregroundColor(.secondary)
                         Text(a.label ?? a.bankName).font(.subheadline).bold().lineLimit(1)
@@ -123,8 +145,10 @@ struct LargeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Link(destination: cameraURL) {
-                HStack(spacing: 10) {
-                    Text("📷").font(.system(size: 28))
+                HStack(spacing: 12) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundColor(.accentColor)
                     VStack(alignment: .leading) {
                         Text("계좌 촬영").font(.subheadline).bold()
                         Text("탭하여 OCR로 인식").font(.caption2).foregroundColor(.secondary)
@@ -140,14 +164,16 @@ struct LargeView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    Text("⭐ 즐겨찾기한 계좌가 없어요").font(.caption).foregroundColor(.secondary)
+                    Label("즐겨찾기한 계좌가 없어요", systemImage: "star")
+                        .font(.caption).foregroundColor(.secondary)
                     Spacer()
                 }
                 Spacer()
             } else {
-                Text("⭐ 즐겨찾기").font(.caption2).foregroundColor(.secondary)
+                Label("즐겨찾기", systemImage: "star.fill")
+                    .font(.caption2).foregroundColor(.secondary)
                 ForEach(entry.favorites.prefix(5)) { a in
-                    Link(destination: copyURL(a.id)) {
+                    copyTrigger(for: a) {
                         HStack(spacing: 8) {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(a.label ?? a.bankName).font(.caption).bold().lineLimit(1)

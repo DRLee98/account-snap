@@ -11,12 +11,15 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Camera,
   useCameraDevice,
   useCameraPermission,
 } from 'react-native-vision-camera';
 import ImagePicker from 'react-native-image-crop-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { Image as ImageIcon, List as ListIcon } from 'lucide-react-native';
 import { createAccount } from '../services/storage';
 import { recognize, parseAccount } from '../services/ocr';
 import { RootStackParamList } from '../navigation/types';
@@ -24,6 +27,7 @@ import { RootStackParamList } from '../navigation/types';
 export default function CameraScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
   const cameraRef = useRef<Camera>(null);
@@ -46,14 +50,13 @@ export default function CameraScreen() {
       });
       croppedPath = cropped.path;
     } catch {
-      return; // cropper cancelled
+      return;
     }
 
     setLoading(true);
     try {
       const response = await recognize(croppedPath);
       const parsed = parseAccount(response);
-
       if (!parsed) {
         Alert.alert(
           'OCR 결과 없음',
@@ -61,11 +64,9 @@ export default function CameraScreen() {
         );
         return;
       }
-
       const ocrRawText = response.images[0]?.fields
         .map(f => f.inferText)
         .join(' ');
-
       const account = createAccount({
         accountNumber: parsed.accountNumber,
         bankName: parsed.bankName || '(은행 미확인)',
@@ -74,8 +75,7 @@ export default function CameraScreen() {
         sourceImageUri: croppedPath,
         ocrRawText,
       });
-
-      navigation.replace('Result', { accountId: account.id });
+      navigation.navigate('Result', { accountId: account.id });
     } catch (e: any) {
       Alert.alert('OCR 에러', e?.message ?? String(e));
     } finally {
@@ -93,18 +93,22 @@ export default function CameraScreen() {
   };
 
   const handleGallery = async () => {
-    try {
-      const image = await ImagePicker.openPicker({ mediaType: 'photo' });
-      await cropAndProcess(image.path);
-    } catch {
-      // cancelled
-    }
+    const response = await launchImageLibrary({
+      mediaType: 'photo',
+      selectionLimit: 1,
+    });
+    if (response.didCancel) return;
+    const uri = response.assets?.[0]?.uri;
+    if (!uri) return;
+    await cropAndProcess(uri);
   };
+
+  const openList = () => navigation.navigate('AccountList');
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
+      <View style={[styles.fill, styles.center]}>
+        <ActivityIndicator size="large" color="#fff" />
         <Text style={styles.loadingText}>계좌 정보를 읽고 있어요...</Text>
       </View>
     );
@@ -112,94 +116,122 @@ export default function CameraScreen() {
 
   if (!hasPermission) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.title}>카메라 권한이 필요해요</Text>
-        <Text style={styles.hint}>
+      <View style={[styles.fill, styles.center, { padding: 24 }]}>
+        <Text style={styles.permTitle}>카메라 권한이 필요해요</Text>
+        <Text style={styles.permHint}>
           계좌 사진을 찍기 위해 카메라 권한을 허용해주세요.
         </Text>
-        <View style={styles.spacer} />
+        <View style={{ height: 16 }} />
         <Button title="권한 요청" onPress={requestPermission} />
-        <View style={styles.gap} />
+        <View style={{ height: 10 }} />
         <Button title="설정 열기" onPress={() => Linking.openSettings()} />
-        <View style={styles.gap} />
+        <View style={{ height: 10 }} />
         <Button title="갤러리에서 선택" onPress={handleGallery} />
-      </View>
-    );
-  }
-
-  if (!device) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.title}>카메라를 사용할 수 없어요</Text>
-        <Text style={styles.hint}>
-          시뮬레이터에서는 카메라 디바이스가 없어요. 갤러리에서 선택해주세요.
-        </Text>
-        <View style={styles.spacer} />
-        <Button title="갤러리에서 선택" onPress={handleGallery} />
+        <View style={{ height: 10 }} />
+        <Button title="계좌 목록" onPress={openList} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Camera
-        ref={cameraRef}
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive
-        photo
-      />
-      <View style={styles.guide}>
+    <View style={styles.fill}>
+      {device ? (
+        <Camera
+          ref={cameraRef}
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive
+          photo
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, styles.noDevice]}>
+          <Text style={styles.permTitle}>시뮬레이터엔 카메라가 없어요</Text>
+          <Text style={styles.permHint}>갤러리에서 선택해주세요</Text>
+        </View>
+      )}
+
+      <View
+        style={[
+          styles.guide,
+          { top: insets.top + 16, left: 24, right: 24 },
+        ]}
+      >
         <Text style={styles.guideText}>계좌가 잘 보이게 촬영해주세요</Text>
       </View>
-      <View style={styles.controls}>
-        <TouchableOpacity onPress={handleGallery} style={styles.sideBtn}>
-          <Text style={styles.sideBtnText}>갤러리</Text>
+
+      <View
+        style={[
+          styles.bottomBar,
+          { paddingBottom: insets.bottom + 20 },
+        ]}
+      >
+        <TouchableOpacity style={styles.sideBtn} onPress={openList}>
+          <ListIcon size={26} color="#fff" strokeWidth={2} />
+          <Text style={styles.sideBtnLabel}>목록</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleCapture} style={styles.shutter}>
+
+        <TouchableOpacity
+          style={[styles.shutter, !device && { opacity: 0.4 }]}
+          onPress={handleCapture}
+          disabled={!device}
+        >
           <View style={styles.shutterInner} />
         </TouchableOpacity>
-        <View style={styles.sideBtn} />
+
+        <TouchableOpacity style={styles.sideBtn} onPress={handleGallery}>
+          <ImageIcon size={26} color="#fff" strokeWidth={2} />
+          <Text style={styles.sideBtnLabel}>갤러리</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  center: {
-    flex: 1,
+  fill: { flex: 1, backgroundColor: '#000' },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  noDevice: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
   },
-  loadingText: { marginTop: 14, color: '#666', fontSize: 14 },
-  title: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  hint: { fontSize: 13, color: '#666', textAlign: 'center' },
-  spacer: { height: 20 },
-  gap: { height: 10 },
+  loadingText: { color: '#fff', marginTop: 14, fontSize: 14 },
+  permTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  permHint: { color: '#aaa', fontSize: 13, textAlign: 'center' },
   guide: {
     position: 'absolute',
-    top: 24,
-    left: 24,
-    right: 24,
     padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 10,
   },
   guideText: { color: '#fff', textAlign: 'center', fontSize: 13 },
-  controls: {
+  bottomBar: {
     position: 'absolute',
-    bottom: 40,
     left: 0,
     right: 0,
+    bottom: 0,
+    paddingTop: 16,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  sideBtn: { width: 80, alignItems: 'center' },
-  sideBtnText: { color: '#fff', fontSize: 14 },
+  sideBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sideBtnLabel: { color: '#fff', fontSize: 10, marginTop: 2 },
   shutter: {
     width: 76,
     height: 76,

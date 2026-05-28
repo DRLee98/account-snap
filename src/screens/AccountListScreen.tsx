@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { ReactNode, useCallback, useLayoutEffect, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -9,15 +9,12 @@ import {
   StyleSheet,
   Text,
   ToastAndroid,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
-import {
-  formatAccountNumber,
-  Account,
-} from '../models/account';
+import { Clock, Star } from 'lucide-react-native';
+import { formatAccountNumber, Account } from '../models/account';
 import {
   clearAll,
   createAccount,
@@ -47,14 +44,15 @@ export default function AccountListScreen() {
     if (!__DEV__) return;
     navigation.setOptions({
       headerRight: () => (
-        <Button
-          title="clear"
-          color="#c33"
+        <Pressable
           onPress={() => {
             clearAll();
             reload();
           }}
-        />
+          hitSlop={8}
+        >
+          <Text style={styles.clearBtn}>비우기</Text>
+        </Pressable>
       ),
     });
   }, [navigation, reload]);
@@ -115,7 +113,12 @@ export default function AccountListScreen() {
           {formatAccountNumber(item.accountNumber)}
         </Text>
       </View>
-      <Text style={styles.copyIcon}>{item.isFavorite ? '⭐' : '☆'}</Text>
+      <Star
+        size={20}
+        color={item.isFavorite ? '#f5a623' : '#bbb'}
+        strokeWidth={2}
+        fill={item.isFavorite ? '#f5a623' : 'transparent'}
+      />
     </Pressable>
   );
 
@@ -142,7 +145,11 @@ export default function AccountListScreen() {
                 const got = await AppGroup.getString('poc:tm');
                 Alert.alert(
                   'TurboModule OK',
-                  `setString → getString: ${JSON.stringify(got)}\n\ncontainerPath: ${AppGroup.getConstants().containerPath}`,
+                  `setString → getString: ${JSON.stringify(
+                    got,
+                  )}\n\ncontainerPath: ${
+                    AppGroup.getConstants().containerPath
+                  }`,
                 );
               } catch (e: any) {
                 Alert.alert('TurboModule 실패', e?.message ?? String(e));
@@ -158,12 +165,27 @@ export default function AccountListScreen() {
     <View style={styles.container}>
       <View style={styles.tabs}>
         <TabButton
-          label="⭐ 즐겨찾기"
+          icon={
+            <Star
+              size={14}
+              color={tab === 'favorites' ? '#007aff' : '#666'}
+              strokeWidth={2}
+              fill={tab === 'favorites' ? '#007aff' : 'transparent'}
+            />
+          }
+          label="즐겨찾기"
           active={tab === 'favorites'}
           onPress={() => setTab('favorites')}
         />
         <TabButton
-          label="🕒 히스토리"
+          icon={
+            <Clock
+              size={14}
+              color={tab === 'history' ? '#007aff' : '#666'}
+              strokeWidth={2}
+            />
+          }
+          label="히스토리"
           active={tab === 'history'}
           onPress={() => setTab('history')}
         />
@@ -179,21 +201,18 @@ export default function AccountListScreen() {
         }
       />
 
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => navigation.navigate('Camera')}
-      >
-        <Text style={styles.fabIcon}>📷</Text>
-      </TouchableOpacity>
+      <Toast position="top" topOffset={16} />
     </View>
   );
 }
 
 function TabButton({
+  icon,
   label,
   active,
   onPress,
 }: {
+  icon: ReactNode;
   label: string;
   active: boolean;
   onPress: () => void;
@@ -203,9 +222,12 @@ function TabButton({
       style={[styles.tab, active && styles.tabActive]}
       onPress={onPress}
     >
-      <Text style={[styles.tabText, active && styles.tabTextActive]}>
-        {label}
-      </Text>
+      <View style={styles.tabContent}>
+        {icon}
+        <Text style={[styles.tabText, active && styles.tabTextActive]}>
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -222,6 +244,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
+  tabContent: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tabActive: {
     borderBottomWidth: 2,
     borderBottomColor: '#007aff',
@@ -252,21 +275,5 @@ const styles = StyleSheet.create({
   },
   emptyHint: { fontSize: 13, color: '#999', textAlign: 'center' },
   devButton: { marginTop: 24 },
-  fab: {
-    position: 'absolute',
-    right: 24,
-    bottom: 32,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#007aff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 5,
-  },
-  fabIcon: { fontSize: 26 },
+  clearBtn: { color: '#c33', fontSize: 12, width: 60, textAlign: 'center' },
 });

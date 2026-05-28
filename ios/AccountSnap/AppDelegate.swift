@@ -1,4 +1,5 @@
 import UIKit
+import UserNotifications
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
@@ -29,7 +30,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       launchOptions: launchOptions
     )
 
+    // 위젯에서 즉시 복사 시 system banner를 띄우기 위한 알림 권한 요청 (포그라운드에서도 표시되도록 delegate 설정)
+    let center = UNUserNotificationCenter.current()
+    center.delegate = NotificationDelegate.shared
+    center.requestAuthorization(options: [.alert, .badge]) { _, _ in }
+
     return true
+  }
+}
+
+private final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+  static let shared = NotificationDelegate()
+  func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              willPresent notification: UNNotification,
+                              withCompletionHandler completionHandler:
+                                @escaping (UNNotificationPresentationOptions) -> Void) {
+    completionHandler([.banner, .list])
   }
 }
 

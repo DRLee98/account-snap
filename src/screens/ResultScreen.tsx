@@ -13,6 +13,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
+import {
+  Building2,
+  Copy as CopyIcon,
+  Star,
+  User,
+} from 'lucide-react-native';
 import { Account, formatAccountNumber } from '../models/account';
 import {
   getAccount,
@@ -69,28 +75,41 @@ export default function ResultScreen() {
       )}
 
       <View style={styles.card}>
-        <Text style={styles.bankLine}>🏦 {account.bankName}</Text>
+        <View style={styles.row}>
+          <Building2 size={16} color="#666" strokeWidth={2} />
+          <Text style={styles.bankLine}>{account.bankName}</Text>
+        </View>
         <Text style={styles.numberLine}>
           {formatAccountNumber(account.accountNumber)}
         </Text>
         {account.holderName ? (
-          <Text style={styles.sub}>👤 {account.holderName}</Text>
+          <View style={styles.row}>
+            <User size={14} color="#666" strokeWidth={2} />
+            <Text style={styles.sub}>{account.holderName}</Text>
+          </View>
         ) : null}
       </View>
 
       <TouchableOpacity style={styles.primary} onPress={handleCopy}>
-        <Text style={styles.primaryText}>📋 계좌번호 복사</Text>
+        <CopyIcon size={18} color="#fff" strokeWidth={2.2} />
+        <Text style={styles.primaryText}>계좌번호 복사</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.secondary} onPress={handleToggleFav}>
+        <Star
+          size={16}
+          color="#007aff"
+          strokeWidth={2}
+          fill={account.isFavorite ? '#007aff' : 'transparent'}
+        />
         <Text style={styles.secondaryText}>
-          {account.isFavorite ? '⭐ 즐겨찾기 해제' : '☆ 즐겨찾기 추가'}
+          {account.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.tertiary}
-        onPress={() => navigation.navigate('AccountList')}
+        onPress={() => navigation.popToTop()}
       >
         <Text style={styles.tertiaryText}>완료</Text>
       </TouchableOpacity>
@@ -118,6 +137,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 8,
   },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   bankLine: { fontSize: 14, color: '#666' },
   numberLine: { fontSize: 22, fontWeight: '700', letterSpacing: 0.5 },
   sub: { fontSize: 13, color: '#555' },
@@ -126,6 +146,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#007aff',
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   primaryText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   secondary: {
@@ -134,6 +157,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#007aff',
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   secondaryText: { color: '#007aff', fontSize: 15, fontWeight: '500' },
   tertiary: {
