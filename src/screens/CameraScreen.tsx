@@ -19,9 +19,12 @@ import {
 } from 'react-native-vision-camera';
 import ImagePicker from 'react-native-image-crop-picker';
 import { launchImageLibrary } from 'react-native-image-picker';
+import Clipboard from '@react-native-clipboard/clipboard';
+import Toast from 'react-native-toast-message';
 import { Image as ImageIcon, List as ListIcon } from 'lucide-react-native';
 import { createAccount } from '../services/storage';
 import { recognize, parseAccount } from '../services/ocr';
+import { formatAccountNumber } from '../models/account';
 import { RootStackParamList } from '../navigation/types';
 
 export default function CameraScreen() {
@@ -74,6 +77,12 @@ export default function CameraScreen() {
         holderName: parsed.holderName,
         sourceImageUri: croppedPath,
         ocrRawText,
+      });
+      Clipboard.setString(parsed.accountNumber);
+      Toast.show({
+        type: 'success',
+        text1: '계좌번호 복사됨',
+        text2: formatAccountNumber(parsed.accountNumber),
       });
       navigation.navigate('Result', { accountId: account.id });
     } catch (e: any) {

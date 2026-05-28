@@ -4,7 +4,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  ToastAndroid,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -17,13 +17,19 @@ import {
   Building2,
   Copy as CopyIcon,
   Star,
+  Tag,
   User,
 } from 'lucide-react-native';
-import { Account, formatAccountNumber } from '../models/account';
+import {
+  Account,
+  formatAccountNumber,
+  normalizeAccountNumber,
+} from '../models/account';
 import {
   getAccount,
   markUsed,
   toggleFavorite,
+  updateAccount,
 } from '../services/storage';
 import { RootStackParamList } from '../navigation/types';
 
@@ -35,10 +41,12 @@ export default function ResultScreen() {
     getAccount(route.params.accountId),
   );
 
-  const refresh = () => {
-    if (!account) return;
-    setAccount(getAccount(account.id));
-  };
+  const [bankName, setBankName] = useState(account?.bankName ?? '');
+  const [accountNumber, setAccountNumber] = useState(
+    account ? formatAccountNumber(account.accountNumber) : '',
+  );
+  const [holderName, setHolderName] = useState(account?.holderName ?? '');
+  const [label, setLabel] = useState(account?.label ?? '');
 
   if (!account) {
     return (
@@ -48,24 +56,61 @@ export default function ResultScreen() {
     );
   }
 
+  const persist = (
+    patch: Partial<
+      Pick<Account, 'bankName' | 'accountNumber' | 'holderName' | 'label'>
+    >,
+  ) => {
+    const updated = updateAccount(account.id, patch);
+    if (updated) setAccount(updated);
+  };
+
+  const handleBankBlur = () => {
+    if (bankName.trim() === account.bankName) return;
+    persist({ bankName: bankName.trim() || '(은행 미확인)' });
+  };
+
+  const handleAccountBlur = () => {
+    const normalized = normalizeAccountNumber(accountNumber);
+    if (normalized === account.accountNumber) return;
+    if (normalized.length < 8) return;
+    persist({ accountNumber: normalized });
+    setAccountNumber(formatAccountNumber(normalized));
+  };
+
+  const handleHolderBlur = () => {
+    const trimmed = holderName.trim();
+    if (trimmed === (account.holderName ?? '')) return;
+    persist({ holderName: trimmed || undefined });
+  };
+
+  const handleLabelBlur = () => {
+    const trimmed = label.trim();
+    if (trimmed === (account.label ?? '')) return;
+    persist({ label: trimmed || undefined });
+  };
+
   const handleCopy = () => {
     Clipboard.setString(account.accountNumber);
     markUsed(account.id);
-    refresh();
+    setAccount(getAccount(account.id));
     Toast.show({
       type: 'success',
       text1: '계좌번호 복사됨',
-      text2: account.accountNumber,
+      text2: formatAccountNumber(account.accountNumber),
     });
   };
 
   const handleToggleFav = () => {
     toggleFavorite(account.id);
-    refresh();
+    setAccount(getAccount(account.id));
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       {account.sourceImageUri && (
         <Image
           source={{ uri: account.sourceImageUri }}
@@ -75,24 +120,44 @@ export default function ResultScreen() {
       )}
 
       <View style={styles.card}>
-        <View style={styles.row}>
-          <Building2 size={16} color="#666" strokeWidth={2} />
-          <Text style={styles.bankLine}>{account.bankName}</Text>
-        </View>
-        <Text style={styles.numberLine}>
-          {formatAccountNumber(account.accountNumber)}
-        </Text>
-        {account.holderName ? (
-          <View style={styles.row}>
-            <User size={14} color="#666" strokeWidth={2} />
-            <Text style={styles.sub}>{account.holderName}</Text>
-          </View>
-        ) : null}
+        <Field
+          icon={<Building2 size={16} color="#666" strokeWidth={2} />}
+          label="은행"
+          value={bankName}
+          onChangeText={setBankName}
+          onBlur={handleBankBlur}
+          placeholder="은행명"
+        />
+        <Field
+          label="계좌번호"
+          value={accountNumber}
+          onChangeText={setAccountNumber}
+          onBlur={handleAccountBlur}
+          placeholder="계좌번호"
+          keyboardType="number-pad"
+          big
+        />
+        <Field
+          icon={<User size={14} color="#666" strokeWidth={2} />}
+          label="예금주"
+          value={holderName}
+          onChangeText={setHolderName}
+          onBlur={handleHolderBlur}
+          placeholder="(선택) 홍길동"
+        />
+        <Field
+          icon={<Tag size={14} color="#666" strokeWidth={2} />}
+          label="별칭"
+          value={label}
+          onChangeText={setLabel}
+          onBlur={handleLabelBlur}
+          placeholder="(선택) 자주가는 분식집"
+        />
       </View>
 
       <TouchableOpacity style={styles.primary} onPress={handleCopy}>
         <CopyIcon size={18} color="#fff" strokeWidth={2.2} />
-        <Text style={styles.primaryText}>계좌번호 복사</Text>
+        <Text style={styles.primaryText}>계좌번호 다시 복사</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.secondary} onPress={handleToggleFav}>
@@ -115,9 +180,47 @@ export default function ResultScreen() {
       </TouchableOpacity>
 
       <Text style={styles.disclaimer}>
-        ※ OCR 결과는 mock 데이터. 실제 OCR은 OCR-001/002에서 CLOVA 연동 시 적용.
+        OCR 직후 자동 복사됨. 잘못 인식되면 위 필드를 탭해서 수정하세요.
       </Text>
     </ScrollView>
+  );
+}
+
+function Field({
+  icon,
+  label,
+  value,
+  onChangeText,
+  onBlur,
+  placeholder,
+  keyboardType,
+  big,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  onBlur: () => void;
+  placeholder?: string;
+  keyboardType?: 'default' | 'number-pad';
+  big?: boolean;
+}) {
+  return (
+    <View style={styles.field}>
+      <View style={styles.fieldLabelRow}>
+        {icon}
+        <Text style={styles.fieldLabel}>{label}</Text>
+      </View>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        onBlur={onBlur}
+        placeholder={placeholder}
+        placeholderTextColor="#bbb"
+        keyboardType={keyboardType ?? 'default'}
+        style={[styles.input, big && styles.inputBig]}
+      />
+    </View>
   );
 }
 
@@ -132,15 +235,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
   },
   card: {
-    padding: 20,
+    paddingVertical: 16,
     backgroundColor: '#f4f4f4',
     borderRadius: 12,
-    gap: 8,
+    gap: 12,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  bankLine: { fontSize: 14, color: '#666' },
-  numberLine: { fontSize: 22, fontWeight: '700', letterSpacing: 0.5 },
-  sub: { fontSize: 13, color: '#555' },
+  field: { gap: 4 },
+  fieldLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  fieldLabel: { fontSize: 12, color: '#666' },
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#222',
+  },
+  inputBig: { fontSize: 20, fontWeight: '700', letterSpacing: 0.5 },
   primary: {
     paddingVertical: 16,
     borderRadius: 12,
@@ -162,10 +273,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   secondaryText: { color: '#007aff', fontSize: 15, fontWeight: '500' },
-  tertiary: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
+  tertiary: { paddingVertical: 12, alignItems: 'center' },
   tertiaryText: { color: '#666', fontSize: 14 },
   disclaimer: {
     fontSize: 11,
