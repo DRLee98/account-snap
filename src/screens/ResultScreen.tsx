@@ -11,6 +11,8 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
+import Clipboard from '@react-native-clipboard/clipboard';
+import Toast from 'react-native-toast-message';
 import { Account, formatAccountNumber } from '../models/account';
 import {
   getAccount,
@@ -41,12 +43,14 @@ export default function ResultScreen() {
   }
 
   const handleCopy = () => {
-    // TODO(APP-004 follow-up): @react-native-clipboard/clipboard 추가
+    Clipboard.setString(account.accountNumber);
     markUsed(account.id);
     refresh();
-    if (ToastAndroid?.show) {
-      ToastAndroid.show('복사됨 (예정)', ToastAndroid.SHORT);
-    }
+    Toast.show({
+      type: 'success',
+      text1: '계좌번호 복사됨',
+      text2: account.accountNumber,
+    });
   };
 
   const handleToggleFav = () => {

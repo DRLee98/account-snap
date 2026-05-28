@@ -2,6 +2,7 @@ import { useCallback, useLayoutEffect, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
+  Alert,
   Button,
   FlatList,
   Pressable,
@@ -11,6 +12,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
+import Toast from 'react-native-toast-message';
 import {
   formatAccountNumber,
   Account,
@@ -23,6 +26,7 @@ import {
   markUsed,
   toggleFavorite,
 } from '../services/storage';
+import AppGroup from '../specs/NativeAppGroup';
 import { RootStackParamList } from '../navigation/types';
 
 type Tab = 'favorites' | 'history';
@@ -85,11 +89,13 @@ export default function AccountListScreen() {
   };
 
   const handleCopy = (account: Account) => {
-    // TODO(APP-004): @react-native-clipboard/clipboard 추가 후 실제 복사
+    Clipboard.setString(account.accountNumber);
     markUsed(account.id);
-    if (ToastAndroid?.show) {
-      ToastAndroid.show('복사됨 (예정)', ToastAndroid.SHORT);
-    }
+    Toast.show({
+      type: 'success',
+      text1: '계좌번호 복사됨',
+      text2: account.accountNumber,
+    });
     reload();
   };
 
@@ -126,6 +132,23 @@ export default function AccountListScreen() {
       {__DEV__ && (
         <View style={styles.devButton}>
           <Button title="더미 데이터 추가 (dev)" onPress={handleSeed} />
+          <View style={{ height: 8 }} />
+          <Button
+            title="AppGroup TurboModule 테스트 (dev)"
+            color="#888"
+            onPress={async () => {
+              try {
+                AppGroup.setString('poc:tm', 'hello-from-rn');
+                const got = await AppGroup.getString('poc:tm');
+                Alert.alert(
+                  'TurboModule OK',
+                  `setString → getString: ${JSON.stringify(got)}\n\ncontainerPath: ${AppGroup.getConstants().containerPath}`,
+                );
+              } catch (e: any) {
+                Alert.alert('TurboModule 실패', e?.message ?? String(e));
+              }
+            }}
+          />
         </View>
       )}
     </View>

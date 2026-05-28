@@ -4,9 +4,57 @@ import {
   NewAccountInput,
   normalizeAccountNumber,
 } from '../../models/account';
+import AppGroup from '../../specs/NativeAppGroup';
+import WidgetBridge from '../../specs/NativeWidgetBridge';
 
 const KEY_LIST = 'accounts:list';
 const KEY_LAST_USED_ID = 'accounts:lastUsedId';
+
+const WIDGET_KEY_ACCOUNTS = 'widget:accounts';
+const WIDGET_KEY_LAST_USED_ID = 'widget:lastUsedId';
+
+type WidgetAccount = {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  label?: string;
+  isFavorite: boolean;
+};
+
+const syncToAppGroup = (): void => {
+  try {
+    const live = readAll().filter(a => a.deletedAt === null);
+    const forWidget: WidgetAccount[] = live
+      .filter(a => a.isFavorite || a.lastUsedAt)
+      .sort((a, b) => {
+        if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1;
+        if (a.isFavorite) return b.createdAt - a.createdAt;
+        return (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0);
+      })
+      .slice(0, 8)
+      .map(a => ({
+        id: a.id,
+        bankName: a.bankName,
+        accountNumber: a.accountNumber,
+        label: a.label,
+        isFavorite: a.isFavorite,
+      }));
+    AppGroup.setString(WIDGET_KEY_ACCOUNTS, JSON.stringify(forWidget));
+    const lastId = storage.getString(KEY_LAST_USED_ID);
+    if (lastId) {
+      AppGroup.setString(WIDGET_KEY_LAST_USED_ID, lastId);
+    } else {
+      AppGroup.remove(WIDGET_KEY_LAST_USED_ID);
+    }
+    try {
+      WidgetBridge.reload();
+    } catch {
+      // best-effort
+    }
+  } catch {
+    // best-effort; widget sync failure must not break main flow
+  }
+};
 
 const uuid = (): string => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -36,7 +84,7 @@ export const listAccounts = (): Account[] =>
 export const listFavorites = (): Account[] =>
   listAccounts()
     .filter(a => a.isFavorite)
-    .sort((a, b) => (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0));
+    .sort((a, b) => b.createdAt - a.createdAt);
 
 export const listHistory = (): Account[] =>
   listAccounts().sort((a, b) => b.createdAt - a.createdAt);
@@ -66,6 +114,7 @@ export const createAccount = (input: NewAccountInput): Account => {
     ocrRawText: input.ocrRawText,
   };
   writeAll([...readAll(), account]);
+  syncToAppGroup();
   return account;
 };
 
@@ -83,6 +132,7 @@ export const updateAccount = (
   };
   all[idx] = next;
   writeAll(all);
+  syncToAppGroup();
   return next;
 };
 
@@ -93,7 +143,10 @@ export const toggleFavorite = (id: string): Account | undefined =>
 
 export const markUsed = (id: string): Account | undefined => {
   const updated = updateAccount(id, { lastUsedAt: Date.now() });
-  if (updated) storage.set(KEY_LAST_USED_ID, id);
+  if (updated) {
+    storage.set(KEY_LAST_USED_ID, id);
+    syncToAppGroup();
+  }
   return updated;
 };
 
@@ -104,4 +157,5 @@ export const deleteAccount = (id: string): void => {
 export const clearAll = (): void => {
   storage.delete(KEY_LIST);
   storage.delete(KEY_LAST_USED_ID);
+  syncToAppGroup();
 };

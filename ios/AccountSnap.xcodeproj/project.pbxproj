@@ -16,7 +16,9 @@
 		E2CA16272FC7C35500684F47 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2CA16262FC7C35500684F47 /* SwiftUI.framework */; };
 		E2CA16342FC7C35600684F47 /* AccountSnapWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E2CA16232FC7C35500684F47 /* AccountSnapWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E2CA163E2FC7C63E00684F47 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2CA163D2FC7C63E00684F47 /* AppGroup.swift */; };
-		E2CA163F2FC7C63E00684F47 /* AppGroup.m in Sources */ = {isa = PBXBuildFile; fileRef = E2CA163C2FC7C63E00684F47 /* AppGroup.m */; };
+		E2CA163F2FC7C63E00684F47 /* AppGroup.mm in Sources */ = {isa = PBXBuildFile; fileRef = E2CA163C2FC7C63E00684F47 /* AppGroup.mm */; };
+		E2CA178D2FC7FD9700684F47 /* WidgetBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = E2CA178B2FC7FD9700684F47 /* WidgetBridge.mm */; };
+		E2CA178E2FC7FD9700684F47 /* WidgetCenterHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2CA178C2FC7FD9700684F47 /* WidgetCenterHelper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,14 +60,16 @@
 		E2CA16262FC7C35500684F47 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		E2CA163A2FC7C37F00684F47 /* AccountSnap.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AccountSnap.entitlements; path = AccountSnap/AccountSnap.entitlements; sourceTree = "<group>"; };
 		E2CA163B2FC7C3A600684F47 /* AccountSnapWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AccountSnapWidgetExtension.entitlements; sourceTree = "<group>"; };
-		E2CA163C2FC7C63E00684F47 /* AppGroup.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = AppGroup.m; path = AccountSnap/AppGroup.m; sourceTree = "<group>"; };
+		E2CA163C2FC7C63E00684F47 /* AppGroup.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AppGroup.mm; path = AccountSnap/AppGroup.mm; sourceTree = "<group>"; };
 		E2CA163D2FC7C63E00684F47 /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppGroup.swift; path = AccountSnap/AppGroup.swift; sourceTree = "<group>"; };
 		E2CA16402FC7C64F00684F47 /* AccountSnap-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AccountSnap-Bridging-Header.h"; sourceTree = "<group>"; };
+		E2CA178B2FC7FD9700684F47 /* WidgetBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = WidgetBridge.mm; path = AccountSnap/WidgetBridge.mm; sourceTree = "<group>"; };
+		E2CA178C2FC7FD9700684F47 /* WidgetCenterHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetCenterHelper.swift; path = AccountSnap/WidgetCenterHelper.swift; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		E2CA16382FC7C35600684F47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		E2CA16382FC7C35600684F47 /* Exceptions for "AccountSnapWidget" folder in "AccountSnapWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -75,7 +79,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		E2CA16282FC7C35500684F47 /* AccountSnapWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (E2CA16382FC7C35600684F47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AccountSnapWidget; sourceTree = "<group>"; };
+		E2CA16282FC7C35500684F47 /* AccountSnapWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E2CA16382FC7C35600684F47 /* Exceptions for "AccountSnapWidget" folder in "AccountSnapWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = AccountSnapWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -108,9 +123,11 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
-				E2CA163C2FC7C63E00684F47 /* AppGroup.m */,
+				E2CA163C2FC7C63E00684F47 /* AppGroup.mm */,
 				E2CA163D2FC7C63E00684F47 /* AppGroup.swift */,
 				E2CA16402FC7C64F00684F47 /* AccountSnap-Bridging-Header.h */,
+				E2CA178B2FC7FD9700684F47 /* WidgetBridge.mm */,
+				E2CA178C2FC7FD9700684F47 /* WidgetCenterHelper.swift */,
 			);
 			name = AccountSnap;
 			sourceTree = "<group>";
@@ -294,13 +311,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AccountSnap/Pods-AccountSnap-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AccountSnap/Pods-AccountSnap-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -337,13 +350,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AccountSnap/Pods-AccountSnap-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AccountSnap/Pods-AccountSnap-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -357,8 +366,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E2CA178D2FC7FD9700684F47 /* WidgetBridge.mm in Sources */,
+				E2CA178E2FC7FD9700684F47 /* WidgetCenterHelper.swift in Sources */,
 				E2CA163E2FC7C63E00684F47 /* AppGroup.swift in Sources */,
-				E2CA163F2FC7C63E00684F47 /* AppGroup.m in Sources */,
+				E2CA163F2FC7C63E00684F47 /* AppGroup.mm in Sources */,
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
