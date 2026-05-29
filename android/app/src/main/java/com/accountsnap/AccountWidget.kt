@@ -4,12 +4,17 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
+import androidx.glance.unit.ColorProvider
+import androidx.glance.layout.ContentScale
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.GlanceAppWidget
@@ -38,21 +43,62 @@ import org.json.JSONArray
 private const val WIDGET_KEY_ACCOUNTS = "widget:accounts"
 private const val WIDGET_KEY_LAST_USED_ID = "widget:lastUsedId"
 
+private val widgetAccent = ColorProvider(Color(0xFF1E2D6E))
+private val widgetAccentText = ColorProvider(Color.White)
+private val widgetAccentSubText = ColorProvider(Color(0xCCFFFFFF))
+
 data class WidgetAccount(
     val id: String,
     val bankName: String,
+    val bankCode: String?,
     val accountNumber: String,
     val label: String?,
     val isFavorite: Boolean,
 )
 
-private fun formatAccountNumber(raw: String, groupSize: Int = 4): String {
+private data class BankPattern(val code: String, val groups: List<List<Int>>)
+
+private val BANK_PATTERNS = listOf(
+    BankPattern("004", listOf(listOf(3, 2, 4, 3), listOf(3, 4, 7))),
+    BankPattern("088", listOf(listOf(3, 3, 6), listOf(3, 2, 6))),
+    BankPattern("020", listOf(listOf(4, 3, 6))),
+    BankPattern("081", listOf(listOf(3, 6, 5))),
+    BankPattern("011", listOf(listOf(3, 4, 4, 2))),
+    BankPattern("003", listOf(listOf(3, 6, 2, 3))),
+    BankPattern("090", listOf(listOf(4, 2, 7))),
+    BankPattern("092", listOf(listOf(4, 4, 4))),
+    BankPattern("089", listOf(listOf(3, 3, 6))),
+    BankPattern("023", listOf(listOf(3, 2, 6))),
+    BankPattern("027", listOf(listOf(3, 3, 6))),
+    BankPattern("071", listOf(listOf(6, 2, 6))),
+    BankPattern("045", listOf(listOf(4, 4, 5))),
+    BankPattern("048", listOf(listOf(4, 4, 5))),
+)
+
+private fun defaultGroupFormat(raw: String, groupSize: Int = 4): String {
     val sb = StringBuilder()
     raw.forEachIndexed { i, c ->
         if (i > 0 && i % groupSize == 0) sb.append('-')
         sb.append(c)
     }
     return sb.toString()
+}
+
+private fun formatAccountByBank(raw: String, bankCode: String?): String {
+    val digits = raw.filter { it.isDigit() }
+    val bank = bankCode?.takeIf { it.isNotEmpty() }
+        ?.let { code -> BANK_PATTERNS.firstOrNull { it.code == code } }
+    val groups = bank?.groups?.firstOrNull { it.sum() == digits.length }
+        ?: return defaultGroupFormat(digits)
+    val out = StringBuilder()
+    var idx = 0
+    for ((i, len) in groups.withIndex()) {
+        if (i > 0) out.append('-')
+        val end = (idx + len).coerceAtMost(digits.length)
+        out.append(digits.substring(idx, end))
+        idx = end
+    }
+    return out.toString()
 }
 
 private fun loadAccounts(context: Context): Pair<WidgetAccount?, List<WidgetAccount>> {
@@ -67,6 +113,7 @@ private fun loadAccounts(context: Context): Pair<WidgetAccount?, List<WidgetAcco
                 WidgetAccount(
                     id = o.getString("id"),
                     bankName = o.optString("bankName", ""),
+                    bankCode = o.optString("bankCode").takeIf { it.isNotEmpty() },
                     accountNumber = o.optString("accountNumber", ""),
                     label = o.optString("label").takeIf { it.isNotEmpty() },
                     isFavorite = o.optBoolean("isFavorite", false),
@@ -180,7 +227,7 @@ private fun MediumContent(lastUsed: WidgetAccount?) {
                     )
                     Spacer(modifier = GlanceModifier.height(4.dp))
                     Text(
-                        formatAccountNumber(lastUsed.accountNumber),
+                        formatAccountByBank(lastUsed.accountNumber, lastUsed.bankCode),
                         style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium),
                         maxLines = 2,
                     )
@@ -203,17 +250,26 @@ private fun ShutterTile() {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.primaryContainer)
+            .background(widgetAccent)
             .cornerRadius(12.dp)
             .clickable(actionStartActivity(cameraIntent())),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("📷", style = TextStyle(fontSize = 24.sp))
-            Spacer(modifier = GlanceModifier.height(4.dp))
+            Image(
+                provider = ImageProvider(R.drawable.ic_app_logo),
+                contentDescription = "스냅넘버",
+                contentScale = ContentScale.Fit,
+                modifier = GlanceModifier.width(40.dp).height(40.dp).cornerRadius(10.dp),
+            )
+            Spacer(modifier = GlanceModifier.height(6.dp))
             Text(
                 "촬영",
-                style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = widgetAccentText,
+                ),
             )
         }
     }
@@ -224,26 +280,35 @@ private fun ShutterBar() {
     Box(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .height(60.dp)
-            .background(GlanceTheme.colors.primaryContainer)
+            .height(64.dp)
+            .background(widgetAccent)
             .cornerRadius(12.dp)
             .clickable(actionStartActivity(cameraIntent())),
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.CenterStart,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("📷", style = TextStyle(fontSize = 22.sp))
-            Spacer(modifier = GlanceModifier.width(10.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = GlanceModifier.padding(horizontal = 12.dp),
+        ) {
+            Image(
+                provider = ImageProvider(R.drawable.ic_app_logo),
+                contentDescription = "스냅넘버",
+                contentScale = ContentScale.Fit,
+                modifier = GlanceModifier.width(40.dp).height(40.dp).cornerRadius(10.dp),
+            )
+            Spacer(modifier = GlanceModifier.width(12.dp))
             Column {
                 Text(
                     "이체 계좌 촬영",
-                    style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                    style = TextStyle(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = widgetAccentText,
+                    ),
                 )
                 Text(
-                    "이체할 이체 계좌 촬영하기",
-                    style = TextStyle(
-                        fontSize = 10.sp,
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                    ),
+                    "이체할 계좌를 사진으로 인식",
+                    style = TextStyle(fontSize = 10.sp, color = widgetAccentSubText),
                 )
             }
         }
@@ -265,7 +330,7 @@ private fun FavoriteRow(a: WidgetAccount) {
                 maxLines = 1,
             )
             Text(
-                "${a.bankName} · ${formatAccountNumber(a.accountNumber)}",
+                "${a.bankName} · ${formatAccountByBank(a.accountNumber, a.bankCode)}",
                 style = TextStyle(
                     fontSize = 11.sp,
                     color = GlanceTheme.colors.onSurfaceVariant,

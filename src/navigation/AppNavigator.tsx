@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Clipboard from '@react-native-clipboard/clipboard';
 import AccountListScreen from '../screens/AccountListScreen';
 import CameraScreen from '../screens/CameraScreen';
+import CropScreen from '../screens/CropScreen';
 import ResultScreen from '../screens/ResultScreen';
 import { RootStackParamList } from './types';
 import { markUsed, getAccount } from '../services/storage';
@@ -43,9 +44,18 @@ export default function AppNavigator() {
           }}
         />
         <Stack.Screen
+          name="Crop"
+          component={CropScreen}
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
+        <Stack.Screen
           name="Result"
           component={ResultScreen}
-          options={{ title: '결과' }}
+          options={{
+            title: '결과',
+            headerBackVisible: false,
+            gestureEnabled: false,
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

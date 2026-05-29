@@ -47,3 +47,5 @@ export const formatAccountNumber = (
   }
   return groups.join('-');
 };
+
+// 은행별 포맷이 필요할 때는 src/services/ocr/bankPatterns의 formatAccountByBank 사용

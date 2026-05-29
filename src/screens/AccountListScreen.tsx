@@ -8,13 +8,14 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  ToastAndroid,
   View,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
-import { Clock, Star } from 'lucide-react-native';
-import { formatAccountNumber, Account } from '../models/account';
+import { Clock, Send, Star } from 'lucide-react-native';
+import { openTossSend } from '../services/toss';
+import { formatAccountByBank } from '../services/ocr';
+import { Account } from '../models/account';
 import {
   clearAll,
   createAccount,
@@ -97,12 +98,28 @@ export default function AccountListScreen() {
     reload();
   };
 
+  const handleSend = async (account: Account) => {
+    const sent = await openTossSend(account);
+    if (sent) {
+      markUsed(account.id);
+      reload();
+    }
+  };
+
   const renderItem = ({ item }: { item: Account }) => (
-    <Pressable
-      style={styles.card}
-      onPress={() => handleCopy(item)}
-      onLongPress={() => handleToggleFavorite(item)}
-    >
+    <Pressable style={styles.card} onPress={() => handleCopy(item)}>
+      <Pressable
+        hitSlop={8}
+        onPress={() => handleToggleFavorite(item)}
+        style={styles.favBtn}
+      >
+        <Star
+          size={22}
+          color={item.isFavorite ? '#f5a623' : '#bbb'}
+          strokeWidth={2}
+          fill={item.isFavorite ? '#f5a623' : 'transparent'}
+        />
+      </Pressable>
       <View style={styles.cardLeft}>
         {item.label ? <Text style={styles.label}>{item.label}</Text> : null}
         <Text style={styles.bank}>
@@ -110,15 +127,16 @@ export default function AccountListScreen() {
           {item.holderName ? `  •  ${item.holderName}` : ''}
         </Text>
         <Text style={styles.number}>
-          {formatAccountNumber(item.accountNumber)}
+          {formatAccountByBank(item.accountNumber, item.bankCode)}
         </Text>
       </View>
-      <Star
-        size={20}
-        color={item.isFavorite ? '#f5a623' : '#bbb'}
-        strokeWidth={2}
-        fill={item.isFavorite ? '#f5a623' : 'transparent'}
-      />
+      <Pressable
+        hitSlop={8}
+        onPress={() => handleSend(item)}
+        style={styles.sendBtn}
+      >
+        <Send size={18} color="#007aff" strokeWidth={2.2} />
+      </Pressable>
     </Pressable>
   );
 
@@ -128,9 +146,6 @@ export default function AccountListScreen() {
         {tab === 'favorites'
           ? '즐겨찾기한 계좌가 없어요'
           : '아직 추출한 계좌가 없어요'}
-      </Text>
-      <Text style={styles.emptyHint}>
-        하단 카메라 버튼으로 첫 계좌를 찍어보세요
       </Text>
       {__DEV__ && (
         <View style={styles.devButton}>
@@ -261,7 +276,21 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 10,
   },
-  cardLeft: { flex: 1 },
+  cardLeft: { flex: 1, marginLeft: 12 },
+  favBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#e5f0ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   label: { fontSize: 13, color: '#666', marginBottom: 2 },
   bank: { fontSize: 13, color: '#444', marginBottom: 4 },
   number: { fontSize: 16, fontWeight: '600' },

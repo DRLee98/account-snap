@@ -16,6 +16,7 @@ const WIDGET_KEY_LAST_USED_ID = 'widget:lastUsedId';
 type WidgetAccount = {
   id: string;
   bankName: string;
+  bankCode?: string;
   accountNumber: string;
   label?: string;
   isFavorite: boolean;
@@ -35,6 +36,7 @@ const syncToAppGroup = (): void => {
       .map(a => ({
         id: a.id,
         bankName: a.bankName,
+        bankCode: a.bankCode,
         accountNumber: a.accountNumber,
         label: a.label,
         isFavorite: a.isFavorite,

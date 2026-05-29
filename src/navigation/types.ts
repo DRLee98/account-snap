@@ -1,7 +1,13 @@
+import type { ParsedAccount } from '../services/ocr';
+
 export type RootStackParamList = {
   AccountList: undefined;
   Camera: undefined;
-  Result: { accountId: string };
+  Crop: { sourceUri: string };
+  Result: {
+    accountId: string;
+    candidates?: ParsedAccount[];
+  };
 };
 
 declare global {

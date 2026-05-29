@@ -11,6 +11,20 @@ private func copyURL(_ id: String) -> URL {
     URL(string: "accountsnap://copy/\(id)")!
 }
 
+private let widgetAccent = Color(red: 30.0 / 255.0, green: 45.0 / 255.0, blue: 110.0 / 255.0)
+
+/// small에서는 navy 전체 배경, medium/large는 시스템 배경.
+struct WidgetContainerBackground: View {
+    @Environment(\.widgetFamily) var family
+    var body: some View {
+        if family == .systemSmall {
+            widgetAccent
+        } else {
+            Color(UIColor.systemBackground)
+        }
+    }
+}
+
 /// iOS 17+에서는 App Intent로 앱을 띄우지 않고 즉시 클립보드 복사,
 /// iOS 16 이하는 deep link fallback (앱 열리며 RN이 복사 처리)
 @ViewBuilder
@@ -31,10 +45,33 @@ private func copyTrigger<Content: View>(for a: WidgetAccount,
 struct WidgetAccount: Identifiable, Decodable {
     let id: String
     let bankName: String
+    let bankCode: String?
     let accountNumber: String
     let label: String?
     let isFavorite: Bool
 }
+
+private struct BankPattern {
+    let code: String
+    let groups: [[Int]]
+}
+
+private let BANK_PATTERNS: [BankPattern] = [
+    BankPattern(code: "004", groups: [[3, 2, 4, 3], [3, 4, 7]]),
+    BankPattern(code: "088", groups: [[3, 3, 6], [3, 2, 6]]),
+    BankPattern(code: "020", groups: [[4, 3, 6]]),
+    BankPattern(code: "081", groups: [[3, 6, 5]]),
+    BankPattern(code: "011", groups: [[3, 4, 4, 2]]),
+    BankPattern(code: "003", groups: [[3, 6, 2, 3]]),
+    BankPattern(code: "090", groups: [[4, 2, 7]]),
+    BankPattern(code: "092", groups: [[4, 4, 4]]),
+    BankPattern(code: "089", groups: [[3, 3, 6]]),
+    BankPattern(code: "023", groups: [[3, 2, 6]]),
+    BankPattern(code: "027", groups: [[3, 3, 6]]),
+    BankPattern(code: "071", groups: [[6, 2, 6]]),
+    BankPattern(code: "045", groups: [[4, 4, 5]]),
+    BankPattern(code: "048", groups: [[4, 4, 5]]),
+]
 
 struct AccountEntry: TimelineEntry {
     let date: Date
@@ -66,25 +103,47 @@ struct Provider: TimelineProvider {
     }
 }
 
-private func formatAccountNumber(_ raw: String) -> String {
+private func defaultGroupFormat(_ raw: String, groupSize: Int = 4) -> String {
     var out: [String] = []
     var idx = raw.startIndex
     while idx < raw.endIndex {
-        let next = raw.index(idx, offsetBy: 4, limitedBy: raw.endIndex) ?? raw.endIndex
+        let next = raw.index(idx, offsetBy: groupSize, limitedBy: raw.endIndex) ?? raw.endIndex
         out.append(String(raw[idx..<next]))
         idx = next
     }
     return out.joined(separator: "-")
 }
 
-/// small: 촬영 단축 (앱 정체성 = OCR 도구)
+private func formatAccountByBank(_ raw: String, bankCode: String?) -> String {
+    let digits = String(raw.filter { $0.isNumber })
+    guard let code = bankCode, !code.isEmpty,
+          let bank = BANK_PATTERNS.first(where: { $0.code == code }),
+          let groups = bank.groups.first(where: { $0.reduce(0, +) == digits.count })
+    else {
+        return defaultGroupFormat(digits)
+    }
+    var out: [String] = []
+    var idx = digits.startIndex
+    for len in groups {
+        let next = digits.index(idx, offsetBy: len, limitedBy: digits.endIndex) ?? digits.endIndex
+        out.append(String(digits[idx..<next]))
+        idx = next
+    }
+    return out.joined(separator: "-")
+}
+
+/// small: 촬영 단축 (앱 정체성 = OCR 도구). 배경은 containerBackground로 적용.
 struct SmallShortcutView: View {
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "camera.fill")
-                .font(.system(size: 36, weight: .semibold))
-                .foregroundColor(.accentColor)
-            Text("이체 계좌 촬영").font(.headline)
+        VStack(spacing: 10) {
+            Image("Logo")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 64, height: 64)
+                .cornerRadius(26)
+            Text("이체 계좌 촬영")
+                .font(.headline)
+                .foregroundColor(.white)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .widgetURL(cameraURL)
@@ -98,13 +157,16 @@ struct MediumView: View {
         HStack(spacing: 14) {
             Link(destination: cameraURL) {
                 VStack(spacing: 6) {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundColor(.accentColor)
-                    Text("촬영").font(.caption).bold()
+                  Image("Logo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 40, height: 40)
+                    .cornerRadius(10)
+                  Text("촬영").font(.caption).bold()
+                    .foregroundColor(.white)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.accentColor.opacity(0.15))
+                .background(widgetAccent)
                 .cornerRadius(12)
             }
             .frame(width: 90)
@@ -118,7 +180,7 @@ struct MediumView: View {
                             Text(a.bankName).font(.caption2).foregroundColor(.secondary)
                         }
                         Spacer(minLength: 2)
-                        Text(formatAccountNumber(a.accountNumber))
+                        Text(formatAccountByBank(a.accountNumber, bankCode: a.bankCode))
                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
                             .lineLimit(2)
                             .minimumScaleFactor(0.7)
@@ -145,17 +207,23 @@ struct LargeView: View {
         VStack(alignment: .leading, spacing: 10) {
             Link(destination: cameraURL) {
                 HStack(spacing: 12) {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundColor(.accentColor)
+                    Image("Logo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 40, height: 40)
+                        .cornerRadius(10)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("계좌 촬영").font(.subheadline).bold()
-                        Text("이체할 이체 계좌 촬영하기").font(.caption2).foregroundColor(.secondary)
+                        Text("이체 계좌 촬영")
+                            .font(.subheadline).bold()
+                            .foregroundColor(.white)
+                        Text("이체할 계좌를 사진으로 인식")
+                            .font(.caption2)
+                            .foregroundColor(.white.opacity(0.75))
                     }
                     Spacer()
                 }
                 .padding(12)
-                .background(Color.accentColor.opacity(0.15))
+                .background(widgetAccent)
                 .cornerRadius(12)
             }
 
@@ -176,7 +244,7 @@ struct LargeView: View {
                         HStack(spacing: 8) {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(a.label ?? a.bankName).font(.caption).bold().lineLimit(1)
-                                Text("\(a.bankName) · \(formatAccountNumber(a.accountNumber))")
+                                Text("\(a.bankName) · \(formatAccountByBank(a.accountNumber, bankCode: a.bankCode))")
                                     .font(.caption2).foregroundColor(.secondary).lineLimit(1)
                             }
                             Spacer()
@@ -212,7 +280,9 @@ struct AccountSnapWidget: Widget {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             if #available(iOS 17.0, *) {
                 AccountSnapWidgetEntryView(entry: entry)
-                    .containerBackground(.fill.tertiary, for: .widget)
+                    .containerBackground(for: .widget) {
+                        WidgetContainerBackground()
+                    }
             } else {
                 AccountSnapWidgetEntryView(entry: entry).padding().background()
             }

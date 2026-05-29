@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,21 +17,24 @@ import Toast from 'react-native-toast-message';
 import {
   Building2,
   Copy as CopyIcon,
+  Send,
   Star,
   Tag,
   User,
 } from 'lucide-react-native';
-import {
-  Account,
-  formatAccountNumber,
-  normalizeAccountNumber,
-} from '../models/account';
+import { Account, normalizeAccountNumber } from '../models/account';
 import {
   getAccount,
   markUsed,
   toggleFavorite,
   updateAccount,
 } from '../services/storage';
+import { openTossSend } from '../services/toss';
+import {
+  formatAccountByBank,
+  inferBankByAccountNumber,
+  ParsedAccount,
+} from '../services/ocr';
 import { RootStackParamList } from '../navigation/types';
 
 export default function ResultScreen() {
@@ -40,10 +44,13 @@ export default function ResultScreen() {
   const [account, setAccount] = useState<Account | undefined>(() =>
     getAccount(route.params.accountId),
   );
+  const [candidates, setCandidates] = useState<ParsedAccount[]>(
+    route.params.candidates ?? [],
+  );
 
   const [bankName, setBankName] = useState(account?.bankName ?? '');
   const [accountNumber, setAccountNumber] = useState(
-    account ? formatAccountNumber(account.accountNumber) : '',
+    account ? formatAccountByBank(account.accountNumber, account.bankCode) : '',
   );
   const [holderName, setHolderName] = useState(account?.holderName ?? '');
   const [label, setLabel] = useState(account?.label ?? '');
@@ -58,7 +65,10 @@ export default function ResultScreen() {
 
   const persist = (
     patch: Partial<
-      Pick<Account, 'bankName' | 'accountNumber' | 'holderName' | 'label'>
+      Pick<
+        Account,
+        'bankName' | 'accountNumber' | 'bankCode' | 'holderName' | 'label'
+      >
     >,
   ) => {
     const updated = updateAccount(account.id, patch);
@@ -74,8 +84,21 @@ export default function ResultScreen() {
     const normalized = normalizeAccountNumber(accountNumber);
     if (normalized === account.accountNumber) return;
     if (normalized.length < 8) return;
-    persist({ accountNumber: normalized });
-    setAccountNumber(formatAccountNumber(normalized));
+    // 계좌번호 변경 시 prefix로 은행 재추론 (텍스트로 은행이 비어있을 때만)
+    const inferred =
+      !account.bankName.trim() || account.bankName === '(은행 미확인)'
+        ? inferBankByAccountNumber(normalized)
+        : undefined;
+    const patch: Partial<Account> = { accountNumber: normalized };
+    if (inferred) {
+      patch.bankName = inferred.name;
+      patch.bankCode = inferred.code;
+    }
+    persist(patch);
+    setAccountNumber(
+      formatAccountByBank(normalized, inferred?.code ?? account.bankCode),
+    );
+    if (inferred) setBankName(inferred.name);
   };
 
   const handleHolderBlur = () => {
@@ -97,13 +120,43 @@ export default function ResultScreen() {
     Toast.show({
       type: 'success',
       text1: '계좌번호 복사됨',
-      text2: formatAccountNumber(account.accountNumber),
+      text2: formatAccountByBank(account.accountNumber, account.bankCode),
     });
   };
 
   const handleToggleFav = () => {
     toggleFavorite(account.id);
     setAccount(getAccount(account.id));
+  };
+
+  const handleTossSend = async () => {
+    const sent = await openTossSend(account);
+    if (sent) {
+      markUsed(account.id);
+      setAccount(getAccount(account.id));
+    }
+  };
+
+  const handleSelectCandidate = (c: ParsedAccount, idx: number) => {
+    // 현재 primary를 candidates 맨 위로 보내고 선택한 c를 primary로
+    const prev: ParsedAccount = {
+      accountNumber: account.accountNumber,
+      bankName: account.bankName,
+      bankCode: account.bankCode,
+      holderName: account.holderName,
+      confidence: 0,
+    };
+    const next = [...candidates];
+    next.splice(idx, 1);
+    next.unshift(prev);
+    setCandidates(next);
+    persist({
+      accountNumber: c.accountNumber,
+      bankName: c.bankName || '(은행 미확인)',
+      bankCode: c.bankCode,
+    });
+    setBankName(c.bankName || '');
+    setAccountNumber(formatAccountByBank(c.accountNumber, c.bankCode));
   };
 
   return (
@@ -118,6 +171,11 @@ export default function ResultScreen() {
           resizeMode="cover"
         />
       )}
+
+      {/* <Text style={styles.disclaimer}>OCR 직후 자동 복사됨.</Text> */}
+      <Text style={styles.disclaimer}>
+        잘못 인식된 값이 있다면 아래 필드를 탭해서 수정해주세요.
+      </Text>
 
       <View style={styles.card}>
         <Field
@@ -155,22 +213,48 @@ export default function ResultScreen() {
         />
       </View>
 
-      <TouchableOpacity style={styles.primary} onPress={handleCopy}>
-        <CopyIcon size={18} color="#fff" strokeWidth={2.2} />
-        <Text style={styles.primaryText}>계좌번호 다시 복사</Text>
+      {candidates.length > 0 && (
+        <View style={styles.candidatesBox}>
+          <Text style={styles.candidatesTitle}>다른 후보 (탭해서 변경)</Text>
+          {candidates.map((c, i) => (
+            <Pressable
+              key={`${c.accountNumber}-${i}`}
+              style={styles.candidateRow}
+              onPress={() => handleSelectCandidate(c, i)}
+            >
+              <Text style={styles.candidateBank}>
+                {c.bankName || '(은행 미상)'}
+              </Text>
+              <Text style={styles.candidateNum}>
+                {formatAccountByBank(c.accountNumber, c.bankCode)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.primary} onPress={handleTossSend}>
+        <Send size={18} color="#fff" strokeWidth={2.2} />
+        <Text style={styles.primaryText}>토스로 송금하기</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.secondary} onPress={handleToggleFav}>
-        <Star
-          size={16}
-          color="#007aff"
-          strokeWidth={2}
-          fill={account.isFavorite ? '#007aff' : 'transparent'}
-        />
-        <Text style={styles.secondaryText}>
-          {account.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.row}>
+        <TouchableOpacity style={styles.secondary} onPress={handleCopy}>
+          <CopyIcon size={16} color="#007aff" strokeWidth={2.2} />
+          <Text style={styles.secondaryText}>계좌번호 복사</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondary} onPress={handleToggleFav}>
+          <Star
+            size={16}
+            color="#007aff"
+            strokeWidth={2}
+            fill={account.isFavorite ? '#007aff' : 'transparent'}
+          />
+          <Text style={styles.secondaryText}>
+            {account.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={styles.tertiary}
@@ -178,10 +262,6 @@ export default function ResultScreen() {
       >
         <Text style={styles.tertiaryText}>완료</Text>
       </TouchableOpacity>
-
-      <Text style={styles.disclaimer}>
-        OCR 직후 자동 복사됨. 잘못 인식되면 위 필드를 탭해서 수정하세요.
-      </Text>
     </ScrollView>
   );
 }
@@ -235,7 +315,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
   },
   card: {
-    paddingVertical: 16,
+    paddingVertical: 12,
     backgroundColor: '#f4f4f4',
     borderRadius: 12,
     gap: 12,
@@ -252,6 +332,30 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   inputBig: { fontSize: 20, fontWeight: '700', letterSpacing: 0.5 },
+  candidatesBox: {
+    padding: 14,
+    backgroundColor: '#fff7e8',
+    borderRadius: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#f5d59c',
+  },
+  candidatesTitle: {
+    fontSize: 12,
+    color: '#a36b00',
+    fontWeight: '600',
+  },
+  candidateRow: {
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+  },
+  candidateBank: { fontSize: 12, color: '#666', marginBottom: 2 },
+  candidateNum: {
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: 'Menlo',
+  },
   primary: {
     paddingVertical: 16,
     borderRadius: 12,
@@ -263,6 +367,7 @@ const styles = StyleSheet.create({
   },
   primaryText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   secondary: {
+    flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1,
@@ -279,6 +384,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#999',
     textAlign: 'center',
-    marginTop: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });

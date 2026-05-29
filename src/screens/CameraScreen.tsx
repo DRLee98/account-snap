@@ -40,56 +40,8 @@ export default function CameraScreen() {
     if (!hasPermission) requestPermission();
   }, [hasPermission, requestPermission]);
 
-  const cropAndProcess = async (sourceUri: string) => {
-    let croppedPath: string;
-    try {
-      const cropped = await ImagePicker.openCropper({
-        path: sourceUri,
-        mediaType: 'photo',
-        width: 1600,
-        height: 1000,
-        freeStyleCropEnabled: true,
-        cropperToolbarTitle: '계좌 영역 자르기',
-      });
-      croppedPath = cropped.path;
-    } catch {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await recognize(croppedPath);
-      const parsed = parseAccount(response);
-      if (!parsed) {
-        Alert.alert(
-          'OCR 결과 없음',
-          '계좌번호를 찾지 못했어요. 더 잘 보이게 다시 촬영해주세요.',
-        );
-        return;
-      }
-      const ocrRawText = response.images[0]?.fields
-        .map(f => f.inferText)
-        .join(' ');
-      const account = createAccount({
-        accountNumber: parsed.accountNumber,
-        bankName: parsed.bankName || '(은행 미확인)',
-        bankCode: parsed.bankCode,
-        holderName: parsed.holderName,
-        sourceImageUri: croppedPath,
-        ocrRawText,
-      });
-      Clipboard.setString(parsed.accountNumber);
-      Toast.show({
-        type: 'success',
-        text1: '계좌번호 복사됨',
-        text2: formatAccountNumber(parsed.accountNumber),
-      });
-      navigation.navigate('Result', { accountId: account.id });
-    } catch (e: any) {
-      Alert.alert('OCR 에러', e?.message ?? String(e));
-    } finally {
-      setLoading(false);
-    }
+  const goToCrop = (sourceUri: string) => {
+    navigation.navigate('Crop', { sourceUri });
   };
 
   const handleCapture = async () => {
@@ -98,7 +50,7 @@ export default function CameraScreen() {
     const path = photo.path.startsWith('file://')
       ? photo.path
       : `file://${photo.path}`;
-    await cropAndProcess(path);
+    await goToCrop(path);
   };
 
   const handleGallery = async () => {
@@ -109,7 +61,7 @@ export default function CameraScreen() {
     if (response.didCancel) return;
     const uri = response.assets?.[0]?.uri;
     if (!uri) return;
-    await cropAndProcess(uri);
+    await goToCrop(uri);
   };
 
   const openList = () => navigation.navigate('AccountList');
@@ -134,10 +86,16 @@ export default function CameraScreen() {
         <Button title="권한 요청" onPress={requestPermission} />
         <View style={{ height: 10 }} />
         <Button title="설정 열기" onPress={() => Linking.openSettings()} />
-        <View style={{ height: 10 }} />
-        <Button title="갤러리에서 선택" onPress={handleGallery} />
-        <View style={{ height: 10 }} />
-        <Button title="계좌 목록" onPress={openList} />
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 20 }]}>
+          <TouchableOpacity style={styles.sideBtn} onPress={openList}>
+            <ListIcon size={26} color="#fff" strokeWidth={2} />
+            <Text style={styles.sideBtnLabel}>목록</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sideBtn} onPress={handleGallery}>
+            <ImageIcon size={26} color="#fff" strokeWidth={2} />
+            <Text style={styles.sideBtnLabel}>갤러리</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -160,20 +118,12 @@ export default function CameraScreen() {
       )}
 
       <View
-        style={[
-          styles.guide,
-          { top: insets.top + 16, left: 24, right: 24 },
-        ]}
+        style={[styles.guide, { top: insets.top + 16, left: 24, right: 24 }]}
       >
         <Text style={styles.guideText}>계좌가 잘 보이게 촬영해주세요</Text>
       </View>
 
-      <View
-        style={[
-          styles.bottomBar,
-          { paddingBottom: insets.bottom + 20 },
-        ]}
-      >
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 20 }]}>
         <TouchableOpacity style={styles.sideBtn} onPress={openList}>
           <ListIcon size={26} color="#fff" strokeWidth={2} />
           <Text style={styles.sideBtnLabel}>목록</Text>

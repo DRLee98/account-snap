@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Linking, StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import BootSplash from 'react-native-bootsplash';
 import AppNavigator, { handleCopyDeepLink } from './src/navigation/AppNavigator';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
     Linking.getInitialURL().then(url => {
       if (url) onUrl(url);
     });
+    BootSplash.hide({ fade: true });
     return () => sub.remove();
   }, []);
 
