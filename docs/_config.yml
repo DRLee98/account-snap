@@ -1,0 +1,11 @@
+# GitHub Pages에는 privacy.md, support.md, index.md만 노출.
+# 내부 design docs(APP-*, OCR-*, DAT-*, WGT-*)는 레포에선 보이지만 Pages 사이트에선 제외.
+include:
+  - privacy.md
+  - support.md
+  - index.md
+exclude:
+  - "APP-*.md"
+  - "DAT-*.md"
+  - "OCR-*.md"
+  - "WGT-*.md"
