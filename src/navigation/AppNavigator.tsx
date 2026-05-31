@@ -1,4 +1,9 @@
-import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  LinkingOptions,
+  createNavigationContainerRef,
+  CommonActions,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Clipboard from '@react-native-clipboard/clipboard';
 import AccountListScreen from '../screens/AccountListScreen';
@@ -10,24 +15,25 @@ import { markUsed, getAccount } from '../services/storage';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['accountsnap://'],
   config: {
     screens: {
       AccountList: '',
-      Camera: 'camera',
       Result: 'result/:accountId',
     },
   },
-  // accountsnap://copy/:id 는 RootStackParamList에 없는 경로 — 별도 처리
+  // accountsnap://camera, accountsnap://copy/:id 는 App.tsx Linking listener에서 처리
   async getInitialURL() {
-    return null; // RN이 native Linking으로 대신 처리
+    return null;
   },
 };
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator initialRouteName="Camera">
         <Stack.Screen
           name="Camera"
@@ -71,5 +77,15 @@ export const handleCopyDeepLink = (url: string): boolean => {
   if (!acc) return false;
   Clipboard.setString(acc.accountNumber);
   markUsed(id);
+  return true;
+};
+
+// 위젯 카메라 deep link: 스택을 Camera 한 장으로 리셋해서 다른 화면이 가려지지 않게
+export const handleCameraDeepLink = (url: string): boolean => {
+  if (url !== 'accountsnap://camera') return false;
+  if (!navigationRef.isReady()) return false;
+  navigationRef.dispatch(
+    CommonActions.reset({ index: 0, routes: [{ name: 'Camera' }] }),
+  );
   return true;
 };

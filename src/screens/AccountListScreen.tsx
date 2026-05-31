@@ -135,7 +135,8 @@ export default function AccountListScreen() {
         onPress={() => handleSend(item)}
         style={styles.sendBtn}
       >
-        <Send size={18} color="#007aff" strokeWidth={2.2} />
+        <Text style={styles.sendText}>송금</Text>
+        {/* <Send size={18} color="#007aff" strokeWidth={2.2} /> */}
       </Pressable>
     </Pressable>
   );
@@ -284,8 +285,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendBtn: {
-    width: 36,
-    height: 36,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 18,
     backgroundColor: '#e5f0ff',
     alignItems: 'center',
@@ -305,4 +306,5 @@ const styles = StyleSheet.create({
   emptyHint: { fontSize: 13, color: '#999', textAlign: 'center' },
   devButton: { marginTop: 24 },
   clearBtn: { color: '#c33', fontSize: 12, width: 60, textAlign: 'center' },
+  sendText: { color: '#007aff', fontSize: 14, fontWeight: '600' },
 });

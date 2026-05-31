@@ -270,34 +270,47 @@ export default function CropScreen() {
                 height={fitted.h}
                 pointerEvents="none"
               >
-                <Defs>
-                  <Mask id="brushMask">
+                {isCapturing ? (
+                  <>
+                    <Defs>
+                      <Mask id="brushMask">
+                        <Rect
+                          x={0}
+                          y={0}
+                          width={fitted.w}
+                          height={fitted.h}
+                          fill="white"
+                        />
+                        <Path
+                          d={pathData}
+                          stroke="black"
+                          strokeWidth={BRUSH_SIZE}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                        />
+                      </Mask>
+                    </Defs>
                     <Rect
                       x={0}
                       y={0}
                       width={fitted.w}
                       height={fitted.h}
                       fill="white"
+                      mask="url(#brushMask)"
                     />
-                    <Path
-                      d={pathData}
-                      stroke="black"
-                      strokeWidth={BRUSH_SIZE}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      fill="none"
-                    />
-                  </Mask>
-                </Defs>
-                <Rect
-                  x={0}
-                  y={0}
-                  width={fitted.w}
-                  height={fitted.h}
-                  fill="white"
-                  fillOpacity={isCapturing ? 1 : 0.2}
-                  mask="url(#brushMask)"
-                />
+                  </>
+                ) : (
+                  <Path
+                    d={pathData}
+                    stroke="#FFD400"
+                    strokeOpacity={0.3}
+                    strokeWidth={BRUSH_SIZE}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                )}
               </Svg>
             )}
           </View>
@@ -334,7 +347,7 @@ export default function CropScreen() {
           onPress={handleShowPreview}
           disabled={points.length < 2 || loading}
         >
-          <Eye size={18} color="#fff" />
+          {/* <Eye size={18} color="#fff" /> */}
           <Text style={styles.previewBtnText}>미리보기</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -342,8 +355,8 @@ export default function CropScreen() {
           onPress={handleRecognizeDirect}
           disabled={points.length < 2 || loading}
         >
-          <Scissors size={20} color="#fff" />
-          <Text style={styles.cropText}>인식하기</Text>
+          {/* <Scissors size={20} color="#fff" /> */}
+          <Text style={styles.cropText}>계좌 읽기</Text>
         </TouchableOpacity>
       </View>
 
