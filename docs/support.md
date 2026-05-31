@@ -19,8 +19,3 @@
 **Q. 위젯이 안 보여요**
 
 - 홈 화면 길게 누름 → 좌상단 + → "스냅넘버" 검색
-
-App Store Connect에 이 두 URL 입력:
-
-- Privacy Policy URL: https://drlee98.github.io/account-snap/privacy
-- Support URL: https://drlee98.github.io/account-snap/support

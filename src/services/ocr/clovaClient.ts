@@ -15,12 +15,21 @@ const inferExtension = (uri: string): string => {
   return 'jpg';
 };
 
+// OCR_PROXY_URL이 설정되면 자체 proxy를 통해 호출 (CLOVA 키 노출 X)
+// 미설정 시 NCP CLOVA OCR을 직접 호출 (개발/초기 출시용)
 export async function recognize(imageUri: string): Promise<ClovaResponse> {
+  const proxyUrl = Config.OCR_PROXY_URL;
+  const proxyToken = Config.OCR_PROXY_TOKEN;
   const invokeUrl = Config.CLOVA_INVOKE_URL;
   const secretKey = Config.CLOVA_SECRET_KEY;
 
-  if (!invokeUrl || !secretKey) {
-    throw new Error('CLOVA OCR 키가 설정되지 않았습니다 (.env 확인)');
+  const useProxy = !!proxyUrl;
+  const endpoint = useProxy ? proxyUrl : invokeUrl;
+  if (!endpoint) {
+    throw new Error('OCR endpoint가 설정되지 않았습니다 (.env 확인)');
+  }
+  if (!useProxy && !secretKey) {
+    throw new Error('CLOVA_SECRET_KEY가 설정되지 않았습니다 (.env 확인)');
   }
 
   const form = new FormData();
@@ -44,17 +53,21 @@ export async function recognize(imageUri: string): Promise<ClovaResponse> {
     type: `image/${inferExtension(imageUri)}`,
   } as any);
 
-  const res = await fetch(invokeUrl, {
+  const headers: Record<string, string> = useProxy
+    ? proxyToken
+      ? { 'X-Proxy-Token': proxyToken }
+      : {}
+    : { 'X-OCR-SECRET': secretKey! };
+
+  const res = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'X-OCR-SECRET': secretKey,
-    },
+    headers,
     body: form,
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`CLOVA OCR ${res.status}: ${text || res.statusText}`);
+    throw new Error(`OCR ${res.status}: ${text || res.statusText}`);
   }
 
   return (await res.json()) as ClovaResponse;
