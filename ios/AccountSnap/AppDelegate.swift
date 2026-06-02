@@ -1,5 +1,6 @@
 import UIKit
 import UserNotifications
+import AppTrackingTransparency
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
@@ -34,6 +35,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let center = UNUserNotificationCenter.current()
     center.delegate = NotificationDelegate.shared
     center.requestAuthorization(options: [.alert, .badge]) { _, _ in }
+
+    // ATT(App Tracking Transparency) 요청 — AdFit IDFA 사용 위해 필요.
+    // iOS 가이드: 앱 활성화 후 1초 정도 지연 후 호출 권장.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      if #available(iOS 14, *) {
+        ATTrackingManager.requestTrackingAuthorization { _ in }
+      }
+    }
 
     return true
   }

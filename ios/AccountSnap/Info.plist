@@ -33,14 +33,14 @@
 			</array>
 		</dict>
 	</array>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>supertoss</string>
-	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>supertoss</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -56,8 +56,17 @@
 	<string></string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>이미 찍어둔 계좌 사진을 불러오기 위해 사진 보관함 접근이 필요합니다.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>맞춤형 광고 제공을 위해 광고 식별자 사용 권한이 필요합니다. 거부해도 앱은 정상 동작합니다.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>nbf5x3v3vp.skadnetwork</string>
+		</dict>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>BootSplash</string>
 	<key>UIRequiredDeviceCapabilities</key>
