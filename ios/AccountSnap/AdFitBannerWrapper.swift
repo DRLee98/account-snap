@@ -45,7 +45,10 @@ public class AdFitBannerWrapper: UIView {
     guard !id.isEmpty else { return }
     bannerView?.removeFromSuperview()
 
-    let banner = AdFitBannerAdView(clientId: id)
+    let w = Int(truncating: adWidth)
+    let h = Int(truncating: adHeight)
+    let size = "\(w)x\(h)"
+    let banner = AdFitBannerAdView(clientId: id, adUnitSize: size)
     banner.frame = CGRect(
       x: 0, y: 0,
       width: CGFloat(truncating: adWidth),

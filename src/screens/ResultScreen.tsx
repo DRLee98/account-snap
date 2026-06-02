@@ -14,6 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
+import Config from 'react-native-config';
 import {
   Building2,
   Copy as CopyIcon,
@@ -22,6 +23,7 @@ import {
   Tag,
   User,
 } from 'lucide-react-native';
+import AdFitBanner from '../components/AdFitBanner';
 import { Account, normalizeAccountNumber } from '../models/account';
 import {
   getAccount,
@@ -262,6 +264,17 @@ export default function ResultScreen() {
       >
         <Text style={styles.tertiaryText}>완료</Text>
       </TouchableOpacity>
+
+      {Config.ADFIT_IOS_RESULT_CLIENT_ID ? (
+        <View style={styles.adWrap}>
+          <AdFitBanner
+            clientId={Config.ADFIT_IOS_RESULT_CLIENT_ID}
+            width={320}
+            height={100}
+            cornerRadius={12}
+          />
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -380,6 +393,7 @@ const styles = StyleSheet.create({
   secondaryText: { color: '#007aff', fontSize: 15, fontWeight: '500' },
   tertiary: { paddingVertical: 12, alignItems: 'center' },
   tertiaryText: { color: '#666', fontSize: 14 },
+  adWrap: { marginTop: 16, alignItems: 'center' },
   disclaimer: {
     fontSize: 11,
     color: '#999',
