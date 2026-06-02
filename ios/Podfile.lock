@@ -1,4 +1,5 @@
 PODS:
+  - AdFitSDK (3.18.3)
   - FBLazyVector (0.85.3)
   - hermes-engine (250829098.0.10):
     - hermes-engine/Pre-built (= 250829098.0.10)
@@ -1607,6 +1608,28 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - react-native-webview (13.16.1):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - React-NativeModulesApple (0.85.3):
     - hermes-engine
     - React-callinvoker
@@ -2209,6 +2232,7 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
+  - AdFitSDK
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - NitroModules (from `../node_modules/react-native-nitro-modules`)
@@ -2256,6 +2280,7 @@ DEPENDENCIES:
   - react-native-mmkv (from `../node_modules/react-native-mmkv`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
+  - react-native-webview (from `../node_modules/react-native-webview`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-networking (from `../node_modules/react-native/ReactCommon/react/networking`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
@@ -2301,6 +2326,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - AdFitSDK
     - TOCropViewController
 
 EXTERNAL SOURCES:
@@ -2397,6 +2423,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-view-shot:
     :path: "../node_modules/react-native-view-shot"
+  react-native-webview:
+    :path: "../node_modules/react-native-webview"
   React-NativeModulesApple:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios"
   React-networking:
@@ -2483,6 +2511,7 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  AdFitSDK: 5dced95f618805b9881365edc8c922de8feb5550
   FBLazyVector: 24e62c765683b8d89006a88a2c8f5cf019f0074d
   hermes-engine: a27a1a75047fda20d4aea655912b31ff61fd3104
   NitroModules: 16bc17a076b12304d608f7c915b9d321f56dfc19
@@ -2529,6 +2558,7 @@ SPEC CHECKSUMS:
   react-native-mmkv: ffda49ce01998ce9c48f87cb8413f67300abc206
   react-native-safe-area-context: fb5c8ee9f6dd62ef710611b3d370c501f42a4ac0
   react-native-view-shot: 5bf17256c542d46c02a6f2d2752fe88eb3a8d058
+  react-native-webview: 2da09bdea1aeb6c46e27dd94632e21059cade6c1
   React-NativeModulesApple: deba264b03bd79c6bd61014fa30e40321b5e443a
   React-networking: 35e6070b084f435429f85c5db40b4d5b38652fe9
   React-oscompat: 64a0c7ef5441855dc6e2a6afe8ba8f92aa05075e
@@ -2573,6 +2603,6 @@ SPEC CHECKSUMS:
   VisionCamera: 7187b3dac1ff3071234ead959ce311875748e14f
   Yoga: 77dfa8673de2874e1855002ae59c68b8be9b007b
 
-PODFILE CHECKSUM: 05a46a7f9b8aad221f58ac97102fccab2c6b8428
+PODFILE CHECKSUM: c69a9760ef741953b114780dc54fc862842a3698
 
 COCOAPODS: 1.16.2

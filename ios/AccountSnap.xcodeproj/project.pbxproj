@@ -3,14 +3,16 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0297CB4998F07AD5884E9C80 /* AdFitBannerWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D928FB14F96A5F0F88E9B04 /* AdFitBannerWrapper.swift */; };
 		0C80B921A6F3F58F76C31292 /* libPods-AccountSnap.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-AccountSnap.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		243988FFC553F20D41AFE184 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		4FC94FC6303547498D2B4E44 /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5507B18ED677423FBD9198DB /* BootSplash.storyboard */; };
+		5A23E29FD89A85DDD033FDDC /* AdFitBannerViewManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4AFB04D405B9C2B9136E780E /* AdFitBannerViewManager.mm */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		7E26CD7A67F247989148A09A /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C65CC6CE2CC5449DB8CCC4F2 /* Colors.xcassets */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
@@ -53,6 +55,8 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = AccountSnap/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = AccountSnap/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-AccountSnap.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AccountSnap.debug.xcconfig"; path = "Target Support Files/Pods-AccountSnap/Pods-AccountSnap.debug.xcconfig"; sourceTree = "<group>"; };
+		4AFB04D405B9C2B9136E780E /* AdFitBannerViewManager.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = AdFitBannerViewManager.mm; path = AccountSnap/AdFitBannerViewManager.mm; sourceTree = "<group>"; };
+		4D928FB14F96A5F0F88E9B04 /* AdFitBannerWrapper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AdFitBannerWrapper.swift; path = AccountSnap/AdFitBannerWrapper.swift; sourceTree = "<group>"; };
 		5507B18ED677423FBD9198DB /* BootSplash.storyboard */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = BootSplash.storyboard; path = AccountSnap/BootSplash.storyboard; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-AccountSnap.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AccountSnap.release.xcconfig"; path = "Target Support Files/Pods-AccountSnap/Pods-AccountSnap.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-AccountSnap.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AccountSnap.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -73,7 +77,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		E2CA16382FC7C35600684F47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		E2CA16382FC7C35600684F47 /* Exceptions for "AccountSnapWidget" folder in "AccountSnapWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -83,7 +87,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		E2CA16282FC7C35500684F47 /* AccountSnapWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (E2CA16382FC7C35600684F47 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AccountSnapWidget; sourceTree = "<group>"; };
+		E2CA16282FC7C35500684F47 /* AccountSnapWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E2CA16382FC7C35600684F47 /* Exceptions for "AccountSnapWidget" folder in "AccountSnapWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = AccountSnapWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +138,8 @@
 				E2CA178C2FC7FD9700684F47 /* WidgetCenterHelper.swift */,
 				5507B18ED677423FBD9198DB /* BootSplash.storyboard */,
 				C65CC6CE2CC5449DB8CCC4F2 /* Colors.xcassets */,
+				4D928FB14F96A5F0F88E9B04 /* AdFitBannerWrapper.swift */,
+				4AFB04D405B9C2B9136E780E /* AdFitBannerViewManager.mm */,
 			);
 			name = AccountSnap;
 			sourceTree = "<group>";
@@ -308,13 +325,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AccountSnap/Pods-AccountSnap-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AccountSnap/Pods-AccountSnap-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -351,13 +364,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AccountSnap/Pods-AccountSnap-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AccountSnap/Pods-AccountSnap-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -376,6 +385,8 @@
 				E2CA163E2FC7C63E00684F47 /* AppGroup.swift in Sources */,
 				E2CA163F2FC7C63E00684F47 /* AppGroup.mm in Sources */,
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				0297CB4998F07AD5884E9C80 /* AdFitBannerWrapper.swift in Sources */,
+				5A23E29FD89A85DDD033FDDC /* AdFitBannerViewManager.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

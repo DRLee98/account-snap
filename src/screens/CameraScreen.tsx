@@ -22,10 +22,12 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 import { Image as ImageIcon, List as ListIcon } from 'lucide-react-native';
+import Config from 'react-native-config';
 import { createAccount } from '../services/storage';
 import { recognize, parseAccount } from '../services/ocr';
 import { formatAccountNumber } from '../models/account';
 import { RootStackParamList } from '../navigation/types';
+import AdFitBanner from '../components/AdFitBanner';
 
 export default function CameraScreen() {
   const navigation =
@@ -117,8 +119,25 @@ export default function CameraScreen() {
         </View>
       )}
 
+      {Config.ADFIT_IOS_CLIENT_ID ? (
+        <View style={[styles.adWrap, { top: insets.top }]}>
+          <AdFitBanner
+            clientId={Config.ADFIT_IOS_CLIENT_ID}
+            width={320}
+            height={50}
+          />
+        </View>
+      ) : null}
+
       <View
-        style={[styles.guide, { top: insets.top + 16, left: 24, right: 24 }]}
+        style={[
+          styles.guide,
+          {
+            top: insets.top + (Config.ADFIT_IOS_CLIENT_ID ? 66 : 16),
+            left: 24,
+            right: 24,
+          },
+        ]}
       >
         <Text style={styles.guideText}>계좌가 잘 보이게 촬영해주세요</Text>
       </View>
@@ -168,6 +187,13 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: 'rgba(0,0,0,0.45)',
     borderRadius: 10,
+  },
+  adWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingTop: 8,
   },
   guideText: { color: '#fff', textAlign: 'center', fontSize: 13 },
   bottomBar: {
