@@ -271,7 +271,6 @@ export default function ResultScreen() {
             clientId={Config.ADFIT_IOS_RESULT_CLIENT_ID}
             width={320}
             height={100}
-            cornerRadius={12}
           />
         </View>
       ) : null}

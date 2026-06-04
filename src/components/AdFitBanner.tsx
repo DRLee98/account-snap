@@ -1,4 +1,9 @@
-import { requireNativeComponent, StyleSheet, View, ViewStyle } from 'react-native';
+import {
+  requireNativeComponent,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 type NativeProps = {
   clientId: string;
@@ -22,7 +27,7 @@ export default function AdFitBanner({
   clientId,
   width = 320,
   height = 50,
-  cornerRadius = 10,
+  cornerRadius = 0,
 }: Props) {
   return (
     <View style={[styles.container, { width, height }]}>

@@ -78,3 +78,8 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# 스크린샷 합성 산출물 (스크립트로 재생성 가능)
+screenshots/raw/
+screenshots/output/
+**/.DS_Store
