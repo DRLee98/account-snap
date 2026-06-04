@@ -198,6 +198,7 @@ export default function CropScreen() {
       bankCode: parsed.bankCode,
       holderName: parsed.holderName,
       sourceImageUri: uri,
+      originalImageUri: sourceUri,
       ocrRawText,
     });
     Clipboard.setString(parsed.accountNumber);

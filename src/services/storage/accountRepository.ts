@@ -113,6 +113,7 @@ export const createAccount = (input: NewAccountInput): Account => {
     label: input.label,
     isFavorite: input.isFavorite ?? false,
     sourceImageUri: input.sourceImageUri,
+    originalImageUri: input.originalImageUri,
     ocrRawText: input.ocrRawText,
   };
   writeAll([...readAll(), account]);

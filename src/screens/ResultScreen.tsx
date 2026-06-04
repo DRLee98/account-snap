@@ -18,6 +18,7 @@ import Config from 'react-native-config';
 import {
   Building2,
   Copy as CopyIcon,
+  Paintbrush,
   Send,
   Star,
   Tag,
@@ -26,6 +27,7 @@ import {
 import AdFitBanner from '../components/AdFitBanner';
 import { Account, normalizeAccountNumber } from '../models/account';
 import {
+  deleteAccount,
   getAccount,
   markUsed,
   toggleFavorite,
@@ -166,13 +168,28 @@ export default function ResultScreen() {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
-      {account.sourceImageUri && (
-        <Image
-          source={{ uri: account.sourceImageUri }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-      )}
+      <View style={styles.imageBox}>
+        {account.sourceImageUri && (
+          <Image
+            source={{ uri: account.sourceImageUri }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        )}
+        {account.originalImageUri ? (
+          <TouchableOpacity
+            style={styles.redo}
+            onPress={() => {
+              const uri = account.originalImageUri!;
+              deleteAccount(account.id);
+              navigation.replace('Crop', { sourceUri: uri });
+            }}
+          >
+            <Paintbrush size={14} color="#666" strokeWidth={2} />
+            <Text style={styles.redoText}>영역 다시 칠하기</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
 
       {/* <Text style={styles.disclaimer}>OCR 직후 자동 복사됨.</Text> */}
       <Text style={styles.disclaimer}>
@@ -320,6 +337,9 @@ const styles = StyleSheet.create({
   container: { padding: 20, paddingBottom: 40, gap: 14 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notFound: { fontSize: 16, color: '#666' },
+  imageBox: {
+    position: 'relative',
+  },
   image: {
     width: '100%',
     height: 200,
@@ -392,6 +412,19 @@ const styles = StyleSheet.create({
   secondaryText: { color: '#007aff', fontSize: 15, fontWeight: '500' },
   tertiary: { paddingVertical: 12, alignItems: 'center' },
   tertiaryText: { color: '#666', fontSize: 14 },
+  redo: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 8,
+  },
+  redoText: { color: '#666', fontSize: 10, fontWeight: '500' },
   adWrap: { marginTop: 16, alignItems: 'center' },
   disclaimer: {
     fontSize: 11,

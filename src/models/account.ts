@@ -14,6 +14,8 @@ export type Account = {
   lastUsedAt?: number;
 
   sourceImageUri?: string;
+  /** brush로 자르기 전 원본 사진 (영역 다시 칠하기에 사용) */
+  originalImageUri?: string;
   ocrRawText?: string;
 };
 
@@ -29,6 +31,7 @@ export type NewAccountInput = Pick<
       | 'label'
       | 'isFavorite'
       | 'sourceImageUri'
+      | 'originalImageUri'
       | 'ocrRawText'
     >
   >;
