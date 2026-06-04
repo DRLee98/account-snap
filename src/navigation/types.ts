@@ -8,6 +8,7 @@ export type RootStackParamList = {
     accountId: string;
     candidates?: ParsedAccount[];
   };
+  Edit: { accountId: string };
 };
 
 declare global {

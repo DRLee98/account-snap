@@ -125,6 +125,8 @@ export default function ResultScreen() {
       type: 'success',
       text1: '계좌번호 복사됨',
       text2: formatAccountByBank(account.accountNumber, account.bankCode),
+      autoHide: true,
+      visibilityTime: 1000,
     });
   };
 

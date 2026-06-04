@@ -12,18 +12,20 @@ import {
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
-import { Clock, Send, Star } from 'lucide-react-native';
+import { Clock, Pencil, Send, Star, Trash2 } from 'lucide-react-native';
 import { openTossSend } from '../services/toss';
 import { formatAccountByBank } from '../services/ocr';
 import { Account } from '../models/account';
 import {
   clearAll,
   createAccount,
+  deleteAccount,
   listFavorites,
   listHistory,
   markUsed,
   toggleFavorite,
 } from '../services/storage';
+import SwipeableListItem from '../components/SwipeableListItem';
 import AppGroup from '../specs/NativeAppGroup';
 import { RootStackParamList } from '../navigation/types';
 
@@ -94,6 +96,8 @@ export default function AccountListScreen() {
       type: 'success',
       text1: '계좌번호 복사됨',
       text2: account.accountNumber,
+      autoHide: true,
+      visibilityTime: 1000,
     });
     reload();
   };
@@ -106,39 +110,87 @@ export default function AccountListScreen() {
     }
   };
 
+  const handleEdit = (account: Account) => {
+    navigation.navigate('Edit', { accountId: account.id });
+  };
+
+  const handleDelete = (account: Account) => {
+    Alert.alert(
+      '계좌 삭제',
+      `${account.label || account.bankName} ${formatAccountByBank(
+        account.accountNumber,
+        account.bankCode,
+      )} 을(를) 삭제할까요?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => {
+            deleteAccount(account.id);
+            reload();
+          },
+        },
+      ],
+    );
+  };
+
   const renderItem = ({ item }: { item: Account }) => (
-    <Pressable style={styles.card} onPress={() => handleCopy(item)}>
-      <Pressable
-        hitSlop={8}
-        onPress={() => handleToggleFavorite(item)}
-        style={styles.favBtn}
+    <View style={styles.swipeWrap}>
+      <SwipeableListItem
+        onPress={() => handleCopy(item)}
+        leftActions={
+          <Pressable
+            style={[styles.swipeBtn, styles.swipeEdit]}
+            onPress={() => handleEdit(item)}
+          >
+            <Pencil size={18} color="#fff" strokeWidth={2.2} />
+            <Text style={styles.swipeText}>수정</Text>
+          </Pressable>
+        }
+        rightActions={
+          <Pressable
+            style={[styles.swipeBtn, styles.swipeDelete]}
+            onPress={() => handleDelete(item)}
+          >
+            <Trash2 size={18} color="#fff" strokeWidth={2.2} />
+            <Text style={styles.swipeText}>삭제</Text>
+          </Pressable>
+        }
       >
-        <Star
-          size={22}
-          color={item.isFavorite ? '#f5a623' : '#bbb'}
-          strokeWidth={2}
-          fill={item.isFavorite ? '#f5a623' : 'transparent'}
-        />
-      </Pressable>
-      <View style={styles.cardLeft}>
-        {item.label ? <Text style={styles.label}>{item.label}</Text> : null}
-        <Text style={styles.bank}>
-          {item.bankName}
-          {item.holderName ? `  •  ${item.holderName}` : ''}
-        </Text>
-        <Text style={styles.number}>
-          {formatAccountByBank(item.accountNumber, item.bankCode)}
-        </Text>
-      </View>
-      <Pressable
-        hitSlop={8}
-        onPress={() => handleSend(item)}
-        style={styles.sendBtn}
-      >
-        <Text style={styles.sendText}>송금</Text>
-        {/* <Send size={18} color="#007aff" strokeWidth={2.2} /> */}
-      </Pressable>
-    </Pressable>
+        <View style={styles.card}>
+          <Pressable
+            hitSlop={8}
+            onPress={() => handleToggleFavorite(item)}
+            style={styles.favBtn}
+          >
+            <Star
+              size={22}
+              color={item.isFavorite ? '#f5a623' : '#bbb'}
+              strokeWidth={2}
+              fill={item.isFavorite ? '#f5a623' : 'transparent'}
+            />
+          </Pressable>
+          <View style={styles.cardLeft}>
+            {item.label ? <Text style={styles.label}>{item.label}</Text> : null}
+            <Text style={styles.bank}>
+              {item.bankName}
+              {item.holderName ? `  •  ${item.holderName}` : ''}
+            </Text>
+            <Text style={styles.number}>
+              {formatAccountByBank(item.accountNumber, item.bankCode)}
+            </Text>
+          </View>
+          <Pressable
+            hitSlop={8}
+            onPress={() => handleSend(item)}
+            style={styles.sendBtn}
+          >
+            <Text style={styles.sendText}>송금</Text>
+          </Pressable>
+        </View>
+      </SwipeableListItem>
+    </View>
   );
 
   const empty = (
@@ -217,7 +269,7 @@ export default function AccountListScreen() {
         }
       />
 
-      <Toast position="top" topOffset={16} />
+      <Toast position="top" topOffset={16} swipeable />
     </View>
   );
 }
@@ -273,9 +325,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f7f7f7',
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 10,
   },
   cardLeft: { flex: 1, marginLeft: 12 },
   favBtn: {
@@ -307,4 +357,16 @@ const styles = StyleSheet.create({
   devButton: { marginTop: 24 },
   clearBtn: { color: '#c33', fontSize: 12, width: 60, textAlign: 'center' },
   sendText: { color: '#007aff', fontSize: 14, fontWeight: '600' },
+  swipeWrap: { marginBottom: 10, overflow: 'hidden', borderRadius: 12 },
+  swipeBtn: {
+    width: 80,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column',
+    gap: 4,
+  },
+  swipeEdit: { backgroundColor: '#5a8dee' },
+  swipeDelete: { backgroundColor: '#e74c3c' },
+  swipeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 });

@@ -9,6 +9,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import AccountListScreen from '../screens/AccountListScreen';
 import CameraScreen from '../screens/CameraScreen';
 import CropScreen from '../screens/CropScreen';
+import EditScreen from '../screens/EditScreen';
 import ResultScreen from '../screens/ResultScreen';
 import { RootStackParamList } from './types';
 import { markUsed, getAccount } from '../services/storage';
@@ -62,6 +63,11 @@ export default function AppNavigator() {
             headerBackVisible: false,
             gestureEnabled: false,
           }}
+        />
+        <Stack.Screen
+          name="Edit"
+          component={EditScreen}
+          options={{ title: '계좌 수정' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
