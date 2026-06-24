@@ -1,0 +1,6 @@
+# Keystore files
+*.keystore
+!debug.keystore
+
+# Signing credentials
+keystore.properties
