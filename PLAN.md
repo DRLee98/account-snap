@@ -14,7 +14,12 @@
 | 도메인 | 코드 | 현황 파일 | 총 항목 | 완료 | 미완료 |
 |--------|------|-----------|---------|------|--------|
 | OCR 처리 | OCR | [plans/ocr.md](plans/ocr.md) | 2 | 2 | 0 |
-| 앱 화면 | APP | [plans/app.md](plans/app.md) | 5 | 5 | 0 |
+| 앱 화면 | APP | [plans/app.md](plans/app.md) | 9 | 9 | 0 |
 | 위젯 | WGT | [plans/widget.md](plans/widget.md) | 5 | 5 | 0 |
 | 데이터/저장 | DAT | [plans/data.md](plans/data.md) | 3 | 2 | 1 |
-| **합계** | - | - | **15** | **14** | **1** |
+| 광고 | AD | [plans/ad.md](plans/ad.md) | 3 | 2 | 1 |
+| **합계** | - | - | **22** | **20** | **2** |
+
+## 세션 노트
+
+- [2026-06: App Store 출시 사이클](docs/SESSION-NOTES-2026-06.md) — AdFit, 편집 분리, 스와이프 액션, ATT, 출시 준비

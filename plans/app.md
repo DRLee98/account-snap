@@ -9,3 +9,7 @@ React Native 메인 앱 화면 및 기본 구조.
 | APP-003 | 크롭 화면 | [docs/APP-003-crop-screen.md](../docs/APP-003-crop-screen.md) | - | ✅ | ✅ |
 | APP-004 | 결과 화면 (계좌/은행 표시, 복사, 즐겨찾기 저장) | [docs/APP-004-result-screen.md](../docs/APP-004-result-screen.md) | - | ✅ | ⬜ |
 | APP-005 | 계좌 목록 화면 (즐겨찾기 + 히스토리) | [docs/APP-005-account-list.md](../docs/APP-005-account-list.md) | - | ✅ | ✅ |
+| APP-006 | 계좌 편집 화면 (사진/송금 없이 필드만) | [docs/SESSION-NOTES-2026-06.md#3-결과-화면--편집-분리](../docs/SESSION-NOTES-2026-06.md) | - | ✅ | ✅ |
+| APP-007 | 스와이프 액션 (수정/삭제, 자체 SwipeableListItem) | [docs/SESSION-NOTES-2026-06.md#4-계좌-목록--스와이프-액션](../docs/SESSION-NOTES-2026-06.md) | - | ✅ | ✅ |
+| APP-008 | 은행 선택기 (14개 + 직접 입력) | [docs/SESSION-NOTES-2026-06.md#은행-선택기-srccomponentsbankpickertsx](../docs/SESSION-NOTES-2026-06.md) | - | ✅ | ✅ |
+| APP-009 | 영역 다시 칠하기 (Result → Crop 재진입) | [docs/SESSION-NOTES-2026-06.md#3-결과-화면--편집-분리](../docs/SESSION-NOTES-2026-06.md) | - | ✅ | ✅ |
