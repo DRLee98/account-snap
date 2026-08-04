@@ -131,6 +131,23 @@ export const BANK_PATTERNS: BankPattern[] = [
 const ALIAS_TO_BANK = new Map<string, BankPattern>();
 BANK_PATTERNS.forEach(b => b.aliases.forEach(a => ALIAS_TO_BANK.set(a, b)));
 
+/** 모든 은행 별칭 (소문자) — 문맥 판별용 */
+export const BANK_ALIASES_LOWER = BANK_PATTERNS.flatMap(b =>
+  b.aliases.map(a => a.toLowerCase()),
+);
+
+/** 평생계좌(계좌번호 = 휴대폰 번호) 접두사 */
+export const PHONE_PREFIXES = ['010', '011', '016', '017', '018', '019'];
+
+/**
+ * 전화번호 자릿수 형태인지 — 010-1234-5678(11자리) / 011-123-4567(10자리).
+ * 같은 접두사라도 12자리 이상이면 일반 계좌번호이므로 제외.
+ */
+export function isPhoneFormatNumber(digits: string): boolean {
+  if (digits.length !== 10 && digits.length !== 11) return false;
+  return PHONE_PREFIXES.some(p => digits.startsWith(p));
+}
+
 /** 텍스트에 등장한 은행 별칭으로 매칭 */
 export function findBankByText(text: string): BankPattern | undefined {
   for (const [alias, bank] of ALIAS_TO_BANK) {
@@ -177,6 +194,12 @@ export function formatAccountByBank(
   bankCode?: string,
 ): string {
   const digits = accountNumber.replace(/[^\d]/g, '');
+  // 평생계좌는 은행 그룹 패턴보다 전화번호 형태가 우선 (010-1234-5678)
+  if (isPhoneFormatNumber(digits)) {
+    return digits.length === 11
+      ? `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+      : `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
   const bank = bankCode
     ? BANK_PATTERNS.find(b => b.code === bankCode)
     : undefined;
