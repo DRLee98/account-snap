@@ -13,3 +13,4 @@ React Native 메인 앱 화면 및 기본 구조.
 | APP-007 | 스와이프 액션 (수정/삭제, 자체 SwipeableListItem) | [docs/SESSION-NOTES-2026-06.md#4-계좌-목록--스와이프-액션](../docs/SESSION-NOTES-2026-06.md) | - | ✅ | ✅ |
 | APP-008 | 은행 선택기 (14개 + 직접 입력) | [docs/SESSION-NOTES-2026-06.md#은행-선택기-srccomponentsbankpickertsx](../docs/SESSION-NOTES-2026-06.md) | - | ✅ | ✅ |
 | APP-009 | 영역 다시 칠하기 (Result → Crop 재진입) | [docs/SESSION-NOTES-2026-06.md#3-결과-화면--편집-분리](../docs/SESSION-NOTES-2026-06.md) | - | ✅ | ✅ |
+| APP-010 | 클립보드 계좌 인식 (텍스트 파서 공유, OCR 비용 0) | [docs/APP-010-clipboard-detect.md](../docs/APP-010-clipboard-detect.md) | [docs/OCR-002-account-parser.md](../docs/OCR-002-account-parser.md) | ✅ | ⬜ |
