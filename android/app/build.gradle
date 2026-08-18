@@ -127,6 +127,9 @@ dependencies {
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")
 
+    // 온디바이스 OCR (한국어 모델 번들). CLOVA 폴백 전 1차 인식용.
+    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

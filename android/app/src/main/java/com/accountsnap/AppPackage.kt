@@ -12,6 +12,7 @@ class AppPackage : BaseReactPackage() {
       when (name) {
         "AppGroup" -> AppGroupModule(reactContext)
         "WidgetBridge" -> WidgetBridgeModule(reactContext)
+        "TextRecognition" -> TextRecognitionModule(reactContext)
         else -> null
       }
 
@@ -28,6 +29,14 @@ class AppPackage : BaseReactPackage() {
         "WidgetBridge" to ReactModuleInfo(
             "WidgetBridge",
             WidgetBridgeModule::class.java.name,
+            false,
+            false,
+            false,
+            true,
+        ),
+        "TextRecognition" to ReactModuleInfo(
+            "TextRecognition",
+            TextRecognitionModule::class.java.name,
             false,
             false,
             false,

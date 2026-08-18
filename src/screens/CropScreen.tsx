@@ -22,7 +22,7 @@ import ImageEditor from '@react-native-community/image-editor';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 import { ChevronLeft, Eraser, Eye, Scissors, X } from 'lucide-react-native';
-import { recognize, parseAccount, formatAccountByBank } from '../services/ocr';
+import { recognizeAccount, formatAccountByBank } from '../services/ocr';
 import { createAccount } from '../services/storage';
 import { RootStackParamList } from '../navigation/types';
 
@@ -180,18 +180,16 @@ export default function CropScreen() {
   };
 
   const runOCR = async (uri: string) => {
-    const response = await recognize(uri);
-    const parsed = parseAccount(response);
-    if (!parsed) {
+    // 온디바이스 OCR 우선, 미검출/저신뢰 시 CLOVA 폴백
+    const result = await recognizeAccount(uri);
+    if (!result) {
       Alert.alert(
         'OCR 결과 없음',
         '계좌번호를 찾지 못했어요. 영역을 다시 칠해서 시도해주세요.',
       );
       return;
     }
-    const ocrRawText = response.images[0]?.fields
-      .map(f => f.inferText)
-      .join(' ');
+    const { parsed, rawText: ocrRawText } = result;
     const account = createAccount({
       accountNumber: parsed.accountNumber,
       bankName: parsed.bankName || '(은행 미확인)',
