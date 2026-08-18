@@ -6,3 +6,4 @@ Naver CLOVA OCR을 이용해 사진에서 계좌번호와 은행명을 추출.
 |----|------|----------|----------|------|------|
 | OCR-001 | CLOVA OCR API 연동 (계정/키/클라이언트) | [docs/OCR-001-clova-integration.md](../docs/OCR-001-clova-integration.md) | - | ✅ | ✅ |
 | OCR-002 | 계좌번호/은행명 파싱 로직 | [docs/OCR-002-account-parser.md](../docs/OCR-002-account-parser.md) | - | ✅ | ✅ |
+| OCR-003 | 온디바이스 OCR (iOS Vision / Android ML Kit) + CLOVA 폴백 | [docs/OCR-003-on-device-ocr.md](../docs/OCR-003-on-device-ocr.md) | [docs/OCR-002-account-parser.md](../docs/OCR-002-account-parser.md) | ✅ | ⬜ |

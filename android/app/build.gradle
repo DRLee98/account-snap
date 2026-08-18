@@ -130,6 +130,9 @@ dependencies {
     // 카카오 AdFit 배너 광고
     implementation("com.kakao.adfit:ads-base:3.22.2")
 
+    // 온디바이스 OCR (한국어 모델 번들). CLOVA 폴백 전 1차 인식용.
+    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

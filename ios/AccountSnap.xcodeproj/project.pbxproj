@@ -21,6 +21,8 @@
 		E2CA16342FC7C35600684F47 /* AccountSnapWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E2CA16232FC7C35500684F47 /* AccountSnapWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E2CA163E2FC7C63E00684F47 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2CA163D2FC7C63E00684F47 /* AppGroup.swift */; };
 		E2CA163F2FC7C63E00684F47 /* AppGroup.mm in Sources */ = {isa = PBXBuildFile; fileRef = E2CA163C2FC7C63E00684F47 /* AppGroup.mm */; };
+		E2CA1A122FC8010000684F47 /* TextRecognition.mm in Sources */ = {isa = PBXBuildFile; fileRef = E2CA1A102FC8010000684F47 /* TextRecognition.mm */; };
+		E2CA1A132FC8010000684F47 /* TextRecognitionHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2CA1A112FC8010000684F47 /* TextRecognitionHelper.swift */; };
 		E2CA178D2FC7FD9700684F47 /* WidgetBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = E2CA178B2FC7FD9700684F47 /* WidgetBridge.mm */; };
 		E2CA178E2FC7FD9700684F47 /* WidgetCenterHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2CA178C2FC7FD9700684F47 /* WidgetCenterHelper.swift */; };
 /* End PBXBuildFile section */
@@ -69,6 +71,8 @@
 		E2CA163A2FC7C37F00684F47 /* AccountSnap.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AccountSnap.entitlements; path = AccountSnap/AccountSnap.entitlements; sourceTree = "<group>"; };
 		E2CA163B2FC7C3A600684F47 /* AccountSnapWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AccountSnapWidgetExtension.entitlements; sourceTree = "<group>"; };
 		E2CA163C2FC7C63E00684F47 /* AppGroup.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AppGroup.mm; path = AccountSnap/AppGroup.mm; sourceTree = "<group>"; };
+		E2CA1A102FC8010000684F47 /* TextRecognition.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = TextRecognition.mm; path = AccountSnap/TextRecognition.mm; sourceTree = "<group>"; };
+		E2CA1A112FC8010000684F47 /* TextRecognitionHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TextRecognitionHelper.swift; path = AccountSnap/TextRecognitionHelper.swift; sourceTree = "<group>"; };
 		E2CA163D2FC7C63E00684F47 /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppGroup.swift; path = AccountSnap/AppGroup.swift; sourceTree = "<group>"; };
 		E2CA16402FC7C64F00684F47 /* AccountSnap-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AccountSnap-Bridging-Header.h"; sourceTree = "<group>"; };
 		E2CA178B2FC7FD9700684F47 /* WidgetBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = WidgetBridge.mm; path = AccountSnap/WidgetBridge.mm; sourceTree = "<group>"; };
@@ -125,6 +129,8 @@
 				E2CA16402FC7C64F00684F47 /* AccountSnap-Bridging-Header.h */,
 				E2CA178B2FC7FD9700684F47 /* WidgetBridge.mm */,
 				E2CA178C2FC7FD9700684F47 /* WidgetCenterHelper.swift */,
+				E2CA1A102FC8010000684F47 /* TextRecognition.mm */,
+				E2CA1A112FC8010000684F47 /* TextRecognitionHelper.swift */,
 				5507B18ED677423FBD9198DB /* BootSplash.storyboard */,
 				C65CC6CE2CC5449DB8CCC4F2 /* Colors.xcassets */,
 				4D928FB14F96A5F0F88E9B04 /* AdFitBannerWrapper.swift */,
@@ -382,6 +388,8 @@
 				E2CA178E2FC7FD9700684F47 /* WidgetCenterHelper.swift in Sources */,
 				E2CA163E2FC7C63E00684F47 /* AppGroup.swift in Sources */,
 				E2CA163F2FC7C63E00684F47 /* AppGroup.mm in Sources */,
+				E2CA1A122FC8010000684F47 /* TextRecognition.mm in Sources */,
+				E2CA1A132FC8010000684F47 /* TextRecognitionHelper.swift in Sources */,
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 				0297CB4998F07AD5884E9C80 /* AdFitBannerWrapper.swift in Sources */,
 				5A23E29FD89A85DDD033FDDC /* AdFitBannerViewManager.mm in Sources */,
