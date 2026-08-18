@@ -4,6 +4,11 @@ import {
   NewAccountInput,
   normalizeAccountNumber,
 } from '../../models/account';
+import {
+  BackupAccount,
+  MergeResult,
+  mergeBackupAccounts,
+} from '../backup';
 import AppGroup from '../../specs/NativeAppGroup';
 import WidgetBridge from '../../specs/NativeWidgetBridge';
 
@@ -151,6 +156,14 @@ export const markUsed = (id: string): Account | undefined => {
     syncToAppGroup();
   }
   return updated;
+};
+
+/** 백업 파일에서 계좌 병합 가져오기. 규칙은 mergeBackupAccounts 참고. */
+export const importAccounts = (incoming: BackupAccount[]): MergeResult => {
+  const { next, result } = mergeBackupAccounts(readAll(), incoming);
+  writeAll(next);
+  syncToAppGroup();
+  return result;
 };
 
 export const deleteAccount = (id: string): void => {

@@ -6,13 +6,14 @@ import {
   Button,
   FlatList,
   Pressable,
+  Share,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
-import { Clock, Pencil, Send, Star, Trash2 } from 'lucide-react-native';
+import { Archive, Clock, Pencil, Star, Trash2 } from 'lucide-react-native';
 import { openTossSend } from '../services/toss';
 import { formatAccountByBank } from '../services/ocr';
 import { Account } from '../models/account';
@@ -20,11 +21,14 @@ import {
   clearAll,
   createAccount,
   deleteAccount,
+  importAccounts,
+  listAccounts,
   listFavorites,
   listHistory,
   markUsed,
   toggleFavorite,
 } from '../services/storage';
+import { parseBackup, serializeBackup } from '../services/backup';
 import SwipeableListItem from '../components/SwipeableListItem';
 import AppGroup from '../specs/NativeAppGroup';
 import { RootStackParamList } from '../navigation/types';
@@ -43,22 +47,88 @@ export default function AccountListScreen() {
 
   useFocusEffect(reload);
 
+  const handleExport = useCallback(async () => {
+    const accounts = listAccounts();
+    if (accounts.length === 0) {
+      Alert.alert('내보내기', '내보낼 계좌가 없어요.');
+      return;
+    }
+    await Share.share({ message: serializeBackup(accounts) });
+  }, []);
+
+  const handleImport = useCallback(async () => {
+    let json: string;
+    try {
+      json = await Clipboard.getString();
+    } catch {
+      json = '';
+    }
+    if (!json.trim()) {
+      Alert.alert(
+        '가져오기',
+        '백업 내용을 먼저 클립보드에 복사한 뒤 다시 시도해주세요.',
+      );
+      return;
+    }
+    try {
+      const accounts = parseBackup(json);
+      Alert.alert(
+        '백업 가져오기',
+        `백업에서 계좌 ${accounts.length}개를 찾았어요. 가져올까요?\n(같은 계좌는 건너뛰어요)`,
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '가져오기',
+            onPress: () => {
+              const result = importAccounts(accounts);
+              reload();
+              Alert.alert(
+                '가져오기 완료',
+                `추가 ${result.created} · 갱신 ${result.updated} · 건너뜀 ${result.skipped}`,
+              );
+            },
+          },
+        ],
+      );
+    } catch (e: any) {
+      Alert.alert('가져오기 실패', e?.message ?? String(e));
+    }
+  }, [reload]);
+
+  const handleBackupMenu = useCallback(() => {
+    Alert.alert(
+      '백업',
+      '계좌 목록을 텍스트로 내보내 보관하거나,\n복사해둔 백업을 가져올 수 있어요.',
+      [
+        { text: '내보내기 (공유)', onPress: handleExport },
+        { text: '가져오기 (클립보드에서)', onPress: handleImport },
+        { text: '취소', style: 'cancel' },
+      ],
+    );
+  }, [handleExport, handleImport]);
+
   useLayoutEffect(() => {
-    if (!__DEV__) return;
     navigation.setOptions({
       headerRight: () => (
-        <Pressable
-          onPress={() => {
-            clearAll();
-            reload();
-          }}
-          hitSlop={8}
-        >
-          <Text style={styles.clearBtn}>비우기</Text>
-        </Pressable>
+        <View style={styles.headerRight}>
+          {__DEV__ && (
+            <Pressable
+              onPress={() => {
+                clearAll();
+                reload();
+              }}
+              hitSlop={8}
+            >
+              <Text style={styles.clearBtn}>비우기</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={handleBackupMenu} hitSlop={8}>
+            <Archive size={20} color="#007aff" strokeWidth={2} />
+          </Pressable>
+        </View>
       ),
     });
-  }, [navigation, reload]);
+  }, [navigation, reload, handleBackupMenu]);
 
   const handleSeed = () => {
     createAccount({
@@ -356,6 +426,7 @@ const styles = StyleSheet.create({
   emptyHint: { fontSize: 13, color: '#999', textAlign: 'center' },
   devButton: { marginTop: 24 },
   clearBtn: { color: '#c33', fontSize: 12, width: 60, textAlign: 'center' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   sendText: { color: '#007aff', fontSize: 14, fontWeight: '600' },
   swipeWrap: { marginBottom: 10, overflow: 'hidden', borderRadius: 12 },
   swipeBtn: {
