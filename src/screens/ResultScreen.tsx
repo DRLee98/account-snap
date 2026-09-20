@@ -14,7 +14,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
-import Config from 'react-native-config';
 import {
   Building2,
   Copy as CopyIcon,
@@ -24,7 +23,7 @@ import {
   Tag,
   User,
 } from 'lucide-react-native';
-import AdFitBanner from '../components/AdFitBanner';
+import AdFitBanner, { AD_CLIENT_IDS } from '../components/AdFitBanner';
 import { Account, normalizeAccountNumber } from '../models/account';
 import {
   deleteAccount,
@@ -284,10 +283,10 @@ export default function ResultScreen() {
         <Text style={styles.tertiaryText}>완료</Text>
       </TouchableOpacity>
 
-      {Config.ADFIT_IOS_RESULT_CLIENT_ID ? (
+      {AD_CLIENT_IDS.result ? (
         <View style={styles.adWrap}>
           <AdFitBanner
-            clientId={Config.ADFIT_IOS_RESULT_CLIENT_ID}
+            clientId={AD_CLIENT_IDS.result}
             width={320}
             height={100}
           />

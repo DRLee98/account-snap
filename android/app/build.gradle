@@ -127,6 +127,9 @@ dependencies {
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")
 
+    // 카카오 AdFit 배너 광고
+    implementation("com.kakao.adfit:ads-base:3.22.2")
+
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

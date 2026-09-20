@@ -17,8 +17,8 @@
 | 앱 화면 | APP | [plans/app.md](plans/app.md) | 9 | 9 | 0 |
 | 위젯 | WGT | [plans/widget.md](plans/widget.md) | 5 | 5 | 0 |
 | 데이터/저장 | DAT | [plans/data.md](plans/data.md) | 3 | 2 | 1 |
-| 광고 | AD | [plans/ad.md](plans/ad.md) | 3 | 2 | 1 |
-| **합계** | - | - | **22** | **20** | **2** |
+| 광고 | AD | [plans/ad.md](plans/ad.md) | 3 | 3 | 0 |
+| **합계** | - | - | **22** | **21** | **1** |
 
 ## 세션 노트
 

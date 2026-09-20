@@ -22,12 +22,11 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 import { Image as ImageIcon, List as ListIcon } from 'lucide-react-native';
-import Config from 'react-native-config';
 import { createAccount } from '../services/storage';
 import { recognize, parseAccount } from '../services/ocr';
 import { formatAccountNumber } from '../models/account';
 import { RootStackParamList } from '../navigation/types';
-import AdFitBanner from '../components/AdFitBanner';
+import AdFitBanner, { AD_CLIENT_IDS } from '../components/AdFitBanner';
 
 export default function CameraScreen() {
   const navigation =
@@ -119,10 +118,10 @@ export default function CameraScreen() {
         </View>
       )}
 
-      {Config.ADFIT_IOS_CLIENT_ID ? (
+      {AD_CLIENT_IDS.camera ? (
         <View style={[styles.adWrap, { top: insets.top }]}>
           <AdFitBanner
-            clientId={Config.ADFIT_IOS_CLIENT_ID}
+            clientId={AD_CLIENT_IDS.camera}
             width={320}
             height={50}
           />
@@ -133,7 +132,7 @@ export default function CameraScreen() {
         style={[
           styles.guide,
           {
-            top: insets.top + (Config.ADFIT_IOS_CLIENT_ID ? 66 : 16),
+            top: insets.top + (AD_CLIENT_IDS.camera ? 66 : 16),
             left: 24,
             right: 24,
           },

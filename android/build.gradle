@@ -20,3 +20,13 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+allprojects {
+    repositories {
+        // 카카오 AdFit SDK (mavenCentral 미배포)
+        maven {
+            url "https://devrepo.kakao.com/nexus/content/groups/public/"
+            content { includeGroup "com.kakao.adfit" }
+        }
+    }
+}

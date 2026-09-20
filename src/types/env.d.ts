@@ -4,6 +4,8 @@ declare module 'react-native-config' {
     CLOVA_SECRET_KEY: string;
     ADFIT_IOS_CLIENT_ID: string;
     ADFIT_IOS_RESULT_CLIENT_ID: string;
+    ADFIT_ANDROID_CLIENT_ID: string;
+    ADFIT_ANDROID_RESULT_CLIENT_ID: string;
   }
   const Config: Env;
   export default Config;
