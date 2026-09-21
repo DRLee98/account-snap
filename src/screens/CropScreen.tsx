@@ -5,7 +5,6 @@ import {
   Image,
   LayoutChangeEvent,
   Modal,
-  PanResponder,
   PixelRatio,
   StyleSheet,
   Text,
@@ -17,6 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, Mask, Path, Rect } from 'react-native-svg';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { captureRef } from 'react-native-view-shot';
 import ImageEditor from '@react-native-community/image-editor';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -82,27 +82,30 @@ export default function CropScreen() {
     };
   }, [imgNaturalSize, layout]);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: e => {
-        const { locationX, locationY } = e.nativeEvent;
-        pointsRef.current = [{ x: locationX, y: locationY }];
-        setPoints([{ x: locationX, y: locationY }]);
-      },
-      onPanResponderMove: e => {
-        const { locationX, locationY } = e.nativeEvent;
-        pointsRef.current.push({ x: locationX, y: locationY });
-        if (pointsRef.current.length % 3 === 0) {
+  // Android에서는 RNGH(GestureHandlerRootView)가 드래그 도중 RN responder를
+  // 강제 취소(terminate)해서 PanResponder로는 붓질이 한 점 이상 쌓이지 않았다.
+  // RNGH가 이미 루트에 있으므로 RNGH 제스처를 그대로 쓴다. (iOS는 기존과 동일 동작)
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .runOnJS(true)
+        .minDistance(0)
+        .shouldCancelWhenOutside(false)
+        .onBegin(e => {
+          pointsRef.current = [{ x: e.x, y: e.y }];
+          setPoints([{ x: e.x, y: e.y }]);
+        })
+        .onUpdate(e => {
+          pointsRef.current.push({ x: e.x, y: e.y });
+          if (pointsRef.current.length % 3 === 0) {
+            setPoints([...pointsRef.current]);
+          }
+        })
+        .onFinalize(() => {
           setPoints([...pointsRef.current]);
-        }
-      },
-      onPanResponderRelease: () => {
-        setPoints([...pointsRef.current]);
-      },
-    }),
-  ).current;
+        }),
+    [],
+  );
 
   const pathData = useMemo(() => {
     if (points.length === 0) return '';
@@ -247,74 +250,75 @@ export default function CropScreen() {
         onLayout={onContainerLayout}
       >
         {fitted && (
-          <View
-            ref={captureBoxRef}
-            collapsable={false}
-            style={{
-              position: 'absolute',
-              left: fitted.offsetX,
-              top: fitted.offsetY,
-              width: fitted.w,
-              height: fitted.h,
-            }}
-            {...panResponder.panHandlers}
-          >
-            <Image
-              source={{ uri: sourceUri }}
-              style={StyleSheet.absoluteFill}
-              resizeMode="stretch"
-            />
-            {pathData && (
-              <Svg
+          <GestureDetector gesture={panGesture}>
+            <View
+              ref={captureBoxRef}
+              collapsable={false}
+              style={{
+                position: 'absolute',
+                left: fitted.offsetX,
+                top: fitted.offsetY,
+                width: fitted.w,
+                height: fitted.h,
+              }}
+            >
+              <Image
+                source={{ uri: sourceUri }}
                 style={StyleSheet.absoluteFill}
-                width={fitted.w}
-                height={fitted.h}
-                pointerEvents="none"
-              >
-                {isCapturing ? (
-                  <>
-                    <Defs>
-                      <Mask id="brushMask">
-                        <Rect
-                          x={0}
-                          y={0}
-                          width={fitted.w}
-                          height={fitted.h}
-                          fill="white"
-                        />
-                        <Path
-                          d={pathData}
-                          stroke="black"
-                          strokeWidth={BRUSH_SIZE}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          fill="none"
-                        />
-                      </Mask>
-                    </Defs>
-                    <Rect
-                      x={0}
-                      y={0}
-                      width={fitted.w}
-                      height={fitted.h}
-                      fill="white"
-                      mask="url(#brushMask)"
+                resizeMode="stretch"
+              />
+              {pathData && (
+                <Svg
+                  style={StyleSheet.absoluteFill}
+                  width={fitted.w}
+                  height={fitted.h}
+                  pointerEvents="none"
+                >
+                  {isCapturing ? (
+                    <>
+                      <Defs>
+                        <Mask id="brushMask">
+                          <Rect
+                            x={0}
+                            y={0}
+                            width={fitted.w}
+                            height={fitted.h}
+                            fill="white"
+                          />
+                          <Path
+                            d={pathData}
+                            stroke="black"
+                            strokeWidth={BRUSH_SIZE}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                        </Mask>
+                      </Defs>
+                      <Rect
+                        x={0}
+                        y={0}
+                        width={fitted.w}
+                        height={fitted.h}
+                        fill="white"
+                        mask="url(#brushMask)"
+                      />
+                    </>
+                  ) : (
+                    <Path
+                      d={pathData}
+                      stroke="#FFD400"
+                      strokeOpacity={0.3}
+                      strokeWidth={BRUSH_SIZE}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
                     />
-                  </>
-                ) : (
-                  <Path
-                    d={pathData}
-                    stroke="#FFD400"
-                    strokeOpacity={0.3}
-                    strokeWidth={BRUSH_SIZE}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                )}
-              </Svg>
-            )}
-          </View>
+                  )}
+                </Svg>
+              )}
+            </View>
+          </GestureDetector>
         )}
 
         {points.length === 0 && (

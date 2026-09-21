@@ -77,9 +77,8 @@ AdFit은 **플랫폼 × 사이즈**마다 코드를 따로 발급한다. 화면�
 - [x] 새 아키텍처 interop으로 legacy ViewManager 해석 — Pixel_9_Pro 에뮬레이터(API 36)에서
       `AdFitBannerView` 정상 생성, unimplemented component 없음
 - [x] 카메라 화면 320x50 배너 실제 광고 노출 확인 (`Request Banner Ad` → 카카오비즈니스 소재)
-- [ ] 결과 화면 320x100 배너 레이아웃 확인 — ResultScreen은 Camera→Crop→OCR을 거쳐야
-      도달해서 CLOVA API 호출이 필요. 미확인
-- [ ] 실기기(에뮬레이터 아님)에서 노출 확인
+- [x] 결과 화면 320x100 배너 실제 광고 노출 확인 (Galaxy S20+, Android 13)
+- [x] 실기기에서 카메라/결과 양쪽 배너 노출 확인
 - [ ] 화면 회전 / 백그라운드 복귀 시 `resume`/`pause` 동작 확인
 
 > `ViewManagerPropertyUpdater: Could not find generated setter` 경고가 뜨지만
