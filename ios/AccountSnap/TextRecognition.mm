@@ -18,8 +18,13 @@ RCT_EXPORT_MODULE()
           resolve:(RCTPromiseResolveBlock)resolve
            reject:(RCTPromiseRejectBlock)reject {
   [TextRecognitionHelper recognize:imageUri
-      resolve:^(NSString *text, double confidence) {
-        resolve(@{ @"text" : text, @"confidence" : @(confidence) });
+      resolve:^(NSString *text, double confidence,
+                NSArray<NSDictionary<NSString *, id> *> *blocks) {
+        resolve(@{
+          @"text" : text,
+          @"confidence" : @(confidence),
+          @"blocks" : blocks,
+        });
       }
       reject:^(NSString *message) {
         reject(@"text_recognition_failed", message, nil);

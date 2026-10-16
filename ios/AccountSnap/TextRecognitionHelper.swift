@@ -4,12 +4,13 @@ import Vision
 
 @objc public class TextRecognitionHelper: NSObject {
   /// 이미지 파일에서 텍스트 인식 (Vision).
-  /// resolve(text, confidence): 인식된 전체 텍스트(공백 조인)와 평균 신뢰도.
+  /// resolve(text, confidence, blocks): 인식 순서대로 공백 조인한 텍스트, 평균 신뢰도,
+  /// 관측 단위 블록(텍스트·신뢰도·정규화 좌표, 원점 좌상단). 읽기 순서 정렬은 JS에서 한다.
   /// 한국어 인식은 iOS 16+(Revision 3)에서 지원 — 이하 버전은 숫자/영문만
   /// 인식되므로 JS 쪽에서 파싱 실패 시 CLOVA로 폴백한다.
   @objc public static func recognize(
     _ imageUri: String,
-    resolve: @escaping (String, Double) -> Void,
+    resolve: @escaping (String, Double, [[String: Any]]) -> Void,
     reject: @escaping (String) -> Void
   ) {
     DispatchQueue.global(qos: .userInitiated).async {
@@ -30,6 +31,7 @@ import Vision
         let observations =
           (req.results as? [VNRecognizedTextObservation]) ?? []
         var texts: [String] = []
+        var blocks: [[String: Any]] = []
         var confidenceSum: Double = 0
         for observation in observations {
           guard let candidate = observation.topCandidates(1).first else {
@@ -37,10 +39,20 @@ import Vision
           }
           texts.append(candidate.string)
           confidenceSum += Double(candidate.confidence)
+          // Vision 좌표는 원점이 좌하단 → 좌상단 원점으로 변환
+          let box = observation.boundingBox
+          blocks.append([
+            "text": candidate.string,
+            "confidence": Double(candidate.confidence),
+            "x": Double(box.minX),
+            "y": Double(1 - box.maxY),
+            "width": Double(box.width),
+            "height": Double(box.height),
+          ])
         }
         let joined = texts.joined(separator: " ")
         let avg = texts.isEmpty ? 0 : confidenceSum / Double(texts.count)
-        resolve(joined, avg)
+        resolve(joined, avg, blocks)
       }
       request.recognitionLevel = .accurate
       // 계좌번호 인식이 목적이므로 언어 교정은 끔 (숫자 왜곡 방지)

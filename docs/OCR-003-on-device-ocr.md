@@ -29,7 +29,10 @@ CLOVA OCR 호출 비용 절감 + 오프라인 동작 + 이미지 외부 전송 �
 ## TurboModule: `TextRecognition`
 
 - 스펙: `src/specs/NativeTextRecognition.ts`
-  - `recognize(imageUri): Promise<{ text: string; confidence: number }>`
+  - `recognize(imageUri): Promise<{ text; confidence; blocks: { text; confidence; x; y; width; height }[] }>`
+  - `blocks`: 관측/라인 단위 좌표 (iOS 정규화·좌상단 원점, Android 픽셀). 엔진 순서는
+    읽기 순서를 보장하지 않으므로 `deviceClient`가 `readingOrder.ts`로 재정렬한 뒤 이어붙인다
+    (OCR-002 2026-10-16 수정 이력 참고)
 - iOS: `ios/AccountSnap/TextRecognition.mm` + `TextRecognitionHelper.swift`
   - Vision `VNRecognizeTextRequest`, accurate, 언어 교정 off (숫자 왜곡 방지)
   - 한국어는 iOS 16+ (Revision 3). 이하 버전은 영문/숫자만 → 자연스럽게 CLOVA 폴백
