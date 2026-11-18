@@ -4,11 +4,6 @@ import {
 } from '../src/services/ocr/bankPatterns';
 import { parseAccountFromText } from '../src/services/ocr/textParser';
 
-jest.mock('react-native-config', () => ({ OCR_FORCE_CLOVA: undefined }));
-jest.mock('../src/services/ocr/deviceClient', () => ({
-  recognizeOnDevice: jest.fn(),
-}));
-jest.mock('../src/services/ocr/clovaClient', () => ({ recognize: jest.fn() }));
 
 describe('matchesBankFormat', () => {
   it('은행 형식과 맞는 번호는 통과', () => {
@@ -66,61 +61,6 @@ describe('parseAccountFromText — formatMismatch 표시', () => {
   it('정상 번호는 formatMismatch가 아니다', () => {
     const p = parseAccountFromText('계좌이체 농협 352-1805-9843-03 박성관');
     expect(p?.formatMismatch).toBe(false);
-  });
-});
-
-describe('recognizeAccount — 형식 불일치 시 CLOVA 폴백', () => {
-  const { recognizeAccount } = require('../src/services/ocr/recognizeAccount');
-  const { recognizeOnDevice } = require('../src/services/ocr/deviceClient');
-  const { recognize } = require('../src/services/ocr/clovaClient');
-
-  const clovaWith = (text: string) => ({
-    version: 'V2',
-    requestId: 't',
-    timestamp: 0,
-    images: [
-      {
-        inferResult: 'SUCCESS',
-        message: 'SUCCESS',
-        fields: [{ inferText: text, inferConfidence: 0.99 }],
-      },
-    ],
-  });
-
-  beforeEach(() => jest.clearAllMocks());
-
-  it('기기 내 결과가 고신뢰여도 형식이 틀리면 CLOVA를 호출한다', async () => {
-    recognizeOnDevice.mockResolvedValue({
-      text: '농협 352-18015-94-13',
-      confidence: 1,
-    });
-    recognize.mockResolvedValue(clovaWith('농협 352-1805-9843-03'));
-
-    const r = await recognizeAccount('file:///x.jpg');
-    expect(recognize).toHaveBeenCalledTimes(1);
-    expect(r.source).toBe('clova');
-    expect(r.parsed.accountNumber).toBe('3521805984303');
-  });
-
-  it('형식이 맞으면 CLOVA를 호출하지 않는다', async () => {
-    recognizeOnDevice.mockResolvedValue({
-      text: '농협 352-1805-9843-03',
-      confidence: 1,
-    });
-    const r = await recognizeAccount('file:///x.jpg');
-    expect(recognize).not.toHaveBeenCalled();
-    expect(r.source).toBe('device');
-  });
-
-  it('CLOVA가 실패하면 형식 불일치 결과라도 돌려준다', async () => {
-    recognizeOnDevice.mockResolvedValue({
-      text: '농협 352-18015-94-13',
-      confidence: 1,
-    });
-    recognize.mockRejectedValue(new Error('network'));
-    const r = await recognizeAccount('file:///x.jpg');
-    expect(r.source).toBe('device');
-    expect(r.parsed.formatMismatch).toBe(true);
   });
 });
 

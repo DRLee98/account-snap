@@ -24,3 +24,4 @@
 
 - [2026-06: App Store 출시 사이클](docs/SESSION-NOTES-2026-06.md) — AdFit, 편집 분리, 스와이프 액션, ATT, 출시 준비
 - 2026-08: 클립보드 계좌 인식(APP-010) · 온디바이스 OCR + CLOVA 폴백(OCR-003) · 백업 내보내기/가져오기(DAT-004)
+- 2026-11: OCR을 CLOVA 우선으로 전환, 기기 내 OCR은 CLOVA 실패 시 폴백 (OCR-003 수정 이력)

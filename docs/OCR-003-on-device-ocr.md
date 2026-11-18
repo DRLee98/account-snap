@@ -1,4 +1,4 @@
-# OCR-003 온디바이스 OCR + CLOVA 폴백
+# OCR-003 온디바이스 OCR (CLOVA 실패 시 폴백)
 
 ## 문서 정보
 - ID: OCR-003
@@ -8,22 +8,23 @@
 
 ## 목적
 
-CLOVA OCR 호출 비용 절감 + 오프라인 동작 + 이미지 외부 전송 최소화.
-1차로 기기 내 OCR을 돌리고, 계좌번호를 못 찾거나 신뢰도가 낮을 때만 CLOVA 폴백.
+CLOVA OCR을 쓸 수 없을 때(오프라인·네트워크 오류)의 대체 인식 경로.
+
+> 처음(2026-08)에는 비용 절감을 위해 **기기 내 OCR 우선 → CLOVA 폴백** 구조였으나,
+> 2026-11-18 **CLOVA 우선**으로 되돌렸다. 아래 "수정 이력" 참고.
 
 ## 인식 플로우 (`recognizeAccount`)
 
 ```
-이미지 → 온디바이스 OCR → parseAccountFromText
-  ├─ 계좌 발견 & confidence ≥ 0.4 & 은행 형식 일치 → 사용 (source: 'device')
-  └─ 미검출/저신뢰/형식 불일치 → CLOVA 호출 → parseAccount
-       ├─ 성공 → 사용 (source: 'clova')
-       └─ CLOVA 실패 시: 온디바이스 저신뢰 결과라도 있으면 그걸 반환
-          (사용자가 결과 화면에서 수정 가능), 없으면 throw
+이미지 → CLOVA 호출 → parseAccount
+  ├─ 계좌 발견 → 사용 (source: 'clova')
+  ├─ 정상 응답인데 계좌 없음 → null (기기 내 OCR로 넘기지 않음)
+  └─ 호출 실패(네트워크 등) → 온디바이스 OCR → parseAccountFromText
+       ├─ 계좌 발견 → 사용 (source: 'device')
+       └─ 없음 → CLOVA 오류 throw
 ```
 
-- `.env`의 `OCR_FORCE_CLOVA=true`로 온디바이스를 끌 수 있음 (디버깅/품질 비교용)
-- 네이티브 모듈 미탑재(빌드 전) 환경에서도 JS는 그대로 CLOVA로 동작
+- 네이티브 모듈 미탑재(빌드 전) 환경에서는 폴백 없이 CLOVA만 동작
   (`TurboModuleRegistry.get` — getEnforcing 아님)
 
 ## TurboModule: `TextRecognition`
@@ -52,3 +53,17 @@ CLOVA OCR 호출 비용 절감 + 오프라인 동작 + 이미지 외부 전송 �
 
 - CropScreen `runOCR`이 `recognize + parseAccount` 대신 `recognizeAccount` 사용
 - `ocrRawText`에는 실제 사용된 소스(디바이스 or CLOVA)의 텍스트가 저장됨
+
+## 수정 이력
+
+### 2026-11-18 — CLOVA 우선으로 전환
+
+1.1.0의 기기 내 OCR(iOS Vision)이 좁은 세로 글씨체 간판 `352-1805-9843-03`을
+`352-18015-94-13`으로 읽었는데, 엔진 신뢰도가 높게 나와 CLOVA 폴백이 안 됐다.
+같은 간판을 CLOVA로 찍은 기록 4건은 모두 정확했다. 계좌번호 오인식은 잘못된 송금으로
+이어질 수 있어 치명적이고, 사용자 수가 적어 CLOVA 비용 부담은 작다고 판단해 순서를 바꿨다.
+
+- 은행 형식 검증(`formatMismatch`, OCR-002)은 남겨둠 — 의심 결과 표시용
+- `OCR_FORCE_CLOVA` env 제거 (CLOVA가 기본이 되어 의미 없음)
+- 개인정보처리방침 2-1을 CLOVA 전송 기본 + 실패 시 기기 내 인식으로 수정
+- `ocrRawText`도 CLOVA 필드를 읽기 순서로 정렬한 텍스트로 저장 (기존엔 정렬 전 텍스트)
