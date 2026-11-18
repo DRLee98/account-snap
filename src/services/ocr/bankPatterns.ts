@@ -24,7 +24,7 @@ export const BANK_PATTERNS: BankPattern[] = [
     aliases: ['국민은행', '국민', 'KB', 'kookmin'],
     prefixes: ['004', '009'],
     lengths: [12, 14],
-    groups: [[3, 2, 4, 3], [3, 4, 7]],
+    groups: [[6, 2, 6], [3, 2, 4, 3], [3, 4, 7]],
   },
   {
     code: '088',
@@ -55,8 +55,9 @@ export const BANK_PATTERNS: BankPattern[] = [
     name: '농협은행',
     aliases: ['농협은행', 'NH', '농협'],
     prefixes: ['351', '302', '317', '356'],
-    lengths: [13],
-    groups: [[3, 4, 4, 2]],
+    // 14자리 6-2-6은 지역 농·축협 계좌
+    lengths: [13, 14],
+    groups: [[3, 4, 4, 2], [6, 2, 6]],
   },
   {
     code: '003',
@@ -108,7 +109,7 @@ export const BANK_PATTERNS: BankPattern[] = [
     name: '우체국',
     aliases: ['우체국', '우체국예금'],
     prefixes: ['600'],
-    lengths: [13],
+    lengths: [14],
     groups: [[6, 2, 6]],
   },
   {
@@ -184,6 +185,36 @@ function pickGroupPattern(
 ): number[] | undefined {
   if (!bank) return undefined;
   return bank.groups.find(g => g.reduce((s, n) => s + n, 0) === digits.length);
+}
+
+/**
+ * 인식된 번호가 은행의 알려진 형식과 맞는지.
+ * - 자릿수가 은행의 lengths에 없으면 불일치
+ * - 원문에 하이픈이 있으면 그 그룹 자릿수가 은행 groups 중 하나와 같아야 함
+ *   (공백 구분은 OCR이 임의로 쪼갠 것일 수 있어 검사하지 않음)
+ * 은행을 모르거나 형식 정보가 없거나 평생계좌 형태면 판단하지 않고 true.
+ */
+export function matchesBankFormat(
+  digits: string,
+  bankCode: string | undefined,
+  raw?: string,
+): boolean {
+  if (isPhoneFormatNumber(digits)) return true;
+  const bank = bankCode
+    ? BANK_PATTERNS.find(b => b.code === bankCode)
+    : undefined;
+  if (!bank?.lengths) return true;
+  if (!bank.lengths.includes(digits.length)) return false;
+  if (raw && raw.includes('-')) {
+    const parts = raw
+      .split('-')
+      .map(p => p.replace(/[^\d]/g, '').length)
+      .filter(n => n > 0);
+    return bank.groups.some(
+      g => g.length === parts.length && g.every((n, i) => n === parts[i]),
+    );
+  }
+  return true;
 }
 
 /**

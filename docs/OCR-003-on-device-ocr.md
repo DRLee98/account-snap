@@ -15,8 +15,8 @@ CLOVA OCR 호출 비용 절감 + 오프라인 동작 + 이미지 외부 전송 �
 
 ```
 이미지 → 온디바이스 OCR → parseAccountFromText
-  ├─ 계좌 발견 & confidence ≥ 0.4 → 사용 (source: 'device')
-  └─ 미검출/저신뢰 → CLOVA 호출 → parseAccount
+  ├─ 계좌 발견 & confidence ≥ 0.4 & 은행 형식 일치 → 사용 (source: 'device')
+  └─ 미검출/저신뢰/형식 불일치 → CLOVA 호출 → parseAccount
        ├─ 성공 → 사용 (source: 'clova')
        └─ CLOVA 실패 시: 온디바이스 저신뢰 결과라도 있으면 그걸 반환
           (사용자가 결과 화면에서 수정 가능), 없으면 throw

@@ -3,6 +3,7 @@ import {
   findBankByText,
   inferBankByAccountNumber,
   isPhoneFormatNumber,
+  matchesBankFormat,
   BANK_ALIASES_LOWER,
   BankPattern,
 } from './bankPatterns';
@@ -180,7 +181,8 @@ export function parseAccountFromText(
 
   // 계좌번호 후보 — 전화번호 형태는 버리지 않고 문맥으로 분류
   const numRegex = /\d[\d\-\s]{8,}\d/g;
-  const candidates: Array<{ digits: string; kind: NumberKind }> = [];
+  type Candidate = { digits: string; raw: string; kind: NumberKind };
+  const candidates: Candidate[] = [];
   const seen = new Set<string>();
 
   for (let m = numRegex.exec(text); m; m = numRegex.exec(text)) {
@@ -206,7 +208,11 @@ export function parseAccountFromText(
       }
 
       seen.add(match.digits);
-      candidates.push({ digits: match.digits, kind });
+      candidates.push({
+        digits: match.digits,
+        raw: text.slice(match.start, match.end),
+        kind,
+      });
     }
   }
 
@@ -227,7 +233,7 @@ export function parseAccountFromText(
     if (m) holderName = m[0];
   }
 
-  const toParsed = (c: { digits: string; kind: NumberKind }): ParsedAccount => {
+  const toParsed = (c: Candidate): ParsedAccount => {
     // 텍스트에 은행명 없으면 계좌번호 prefix로 추론
     const bank: BankPattern | undefined =
       bankFromText ?? inferBankByAccountNumber(c.digits);
@@ -236,6 +242,10 @@ export function parseAccountFromText(
       bankName: bank?.name ?? '',
       bankCode: bank?.code,
       holderName,
+      // 앞자리로 추측한 은행은 근거가 약해, 텍스트에서 은행명을 찾은 경우에만 형식 검증
+      formatMismatch: bankFromText
+        ? !matchesBankFormat(c.digits, bankFromText.code, c.raw)
+        : false,
       confidence: Math.min(
         1,
         baseConfidence * (bank ? 1 : 0.7) * KIND_CONFIDENCE[c.kind],

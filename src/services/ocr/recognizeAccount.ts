@@ -17,7 +17,7 @@ const DEVICE_MIN_CONFIDENCE = 0.4;
 /**
  * 계좌 인식 전체 플로우:
  * 1차 온디바이스 OCR (무료·오프라인·이미지 외부 전송 없음)
- * → 미검출/저신뢰면 CLOVA 폴백.
+ * → 미검출/저신뢰/은행 형식 불일치면 CLOVA 폴백.
  *
  * CLOVA 호출까지 실패했더라도 온디바이스에서 저신뢰 결과라도 있었다면
  * 그 결과를 반환한다 (사용자가 결과 화면에서 수정 가능).
@@ -34,7 +34,11 @@ export async function recognizeAccount(
       const parsed = parseAccountFromText(device.text, device.confidence);
       if (parsed) {
         deviceResult = { parsed, rawText: device.text, source: 'device' };
-        if (parsed.confidence >= DEVICE_MIN_CONFIDENCE) {
+        // 엔진 신뢰도는 오인식에도 높게 나올 수 있어 은행 형식 검증을 함께 본다
+        if (
+          parsed.confidence >= DEVICE_MIN_CONFIDENCE &&
+          !parsed.formatMismatch
+        ) {
           return deviceResult;
         }
       }

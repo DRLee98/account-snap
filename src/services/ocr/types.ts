@@ -27,5 +27,7 @@ export type ParsedAccount = {
   bankCode?: string;
   holderName?: string;
   confidence: number;
+  /** 은행의 알려진 자릿수·하이픈 그룹과 맞지 않음 — 오인식 의심 */
+  formatMismatch?: boolean;
   candidates?: ParsedAccount[];
 };
