@@ -11,6 +11,7 @@ import CameraScreen from '../screens/CameraScreen';
 import CropScreen from '../screens/CropScreen';
 import EditScreen from '../screens/EditScreen';
 import ResultScreen from '../screens/ResultScreen';
+import TransferAppScreen from '../screens/TransferAppScreen';
 import { RootStackParamList } from './types';
 import { markUsed, getAccount } from '../services/storage';
 
@@ -68,6 +69,11 @@ export default function AppNavigator() {
           name="Edit"
           component={EditScreen}
           options={{ title: '계좌 수정' }}
+        />
+        <Stack.Screen
+          name="TransferApp"
+          component={TransferAppScreen}
+          options={{ title: '주거래 은행' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

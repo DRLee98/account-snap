@@ -18,6 +18,7 @@ class AppPackage : BaseReactPackage() {
         "AppGroup" -> AppGroupModule(reactContext)
         "WidgetBridge" -> WidgetBridgeModule(reactContext)
         "TextRecognition" -> TextRecognitionModule(reactContext)
+        "AppLauncher" -> AppLauncherModule(reactContext)
         else -> null
       }
 
@@ -42,6 +43,14 @@ class AppPackage : BaseReactPackage() {
         "TextRecognition" to ReactModuleInfo(
             "TextRecognition",
             TextRecognitionModule::class.java.name,
+            false,
+            false,
+            false,
+            true,
+        ),
+        "AppLauncher" to ReactModuleInfo(
+            "AppLauncher",
+            AppLauncherModule::class.java.name,
             false,
             false,
             false,

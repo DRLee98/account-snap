@@ -9,6 +9,7 @@ export type RootStackParamList = {
     candidates?: ParsedAccount[];
   };
   Edit: { accountId: string };
+  TransferApp: undefined;
 };
 
 declare global {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -9,13 +9,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 import {
   Building2,
+  ChevronRight,
   Copy as CopyIcon,
   Paintbrush,
   Send,
@@ -32,8 +37,10 @@ import {
   toggleFavorite,
   updateAccount,
 } from '../services/storage';
-import { openTossSend } from '../services/toss';
+import { sendWithApp } from '../services/transfer/send';
+import { getTransferApp } from '../services/transfer/preference';
 import {
+  findBankByText,
   formatAccountByBank,
   inferBankByAccountNumber,
   ParsedAccount,
@@ -57,6 +64,14 @@ export default function ResultScreen() {
   );
   const [holderName, setHolderName] = useState(account?.holderName ?? '');
   const [label, setLabel] = useState(account?.label ?? '');
+  const [transferApp, setTransferApp] = useState(getTransferApp);
+
+  // 주거래 은행 화면에서 돌아오면 버튼 문구를 갱신
+  useFocusEffect(
+    useCallback(() => {
+      setTransferApp(getTransferApp());
+    }, []),
+  );
 
   if (!account) {
     return (
@@ -79,8 +94,13 @@ export default function ResultScreen() {
   };
 
   const handleBankBlur = () => {
-    if (bankName.trim() === account.bankName) return;
-    persist({ bankName: bankName.trim() || '(은행 미확인)' });
+    const trimmed = bankName.trim();
+    if (trimmed === account.bankName) return;
+    // 코드를 같이 갱신하지 않으면 송금 링크가 옛 은행 코드로 열린다
+    persist({
+      bankName: trimmed || '(은행 미확인)',
+      bankCode: findBankByText(trimmed)?.code,
+    });
   };
 
   const handleAccountBlur = () => {
@@ -134,9 +154,13 @@ export default function ResultScreen() {
     setAccount(getAccount(account.id));
   };
 
-  const handleTossSend = async () => {
-    const sent = await openTossSend(account);
-    if (sent) {
+  const openTransferAppSettings = () => navigation.navigate('TransferApp');
+
+  const handleSend = async () => {
+    const result = await sendWithApp(transferApp, account, {
+      onChooseOtherApp: openTransferAppSettings,
+    });
+    if (result !== 'failed') {
       markUsed(account.id);
       setAccount(getAccount(account.id));
     }
@@ -253,10 +277,40 @@ export default function ResultScreen() {
         </View>
       )}
 
-      <TouchableOpacity style={styles.primary} onPress={handleTossSend}>
-        <Send size={18} color="#fff" strokeWidth={2.2} />
-        <Text style={styles.primaryText}>토스로 송금하기</Text>
-      </TouchableOpacity>
+      <View style={styles.sendBlock}>
+        <TouchableOpacity
+          style={styles.primary}
+          onPress={handleSend}
+          accessibilityRole="button"
+        >
+          <View style={styles.primaryRow}>
+            {transferApp.mode === 'prefill' ? (
+              <Send size={18} color="#fff" strokeWidth={2.2} />
+            ) : (
+              <CopyIcon size={18} color="#fff" strokeWidth={2.2} />
+            )}
+            <Text style={styles.primaryText}>{transferApp.sendLabel}</Text>
+          </View>
+          {transferApp.mode === 'copyLaunch' ||
+          transferApp.mode === 'experimental' ? (
+            <Text style={styles.primarySub}>
+              계좌번호를 복사하고 앱을 열어요
+            </Text>
+          ) : null}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.changeRow}
+          onPress={openTransferAppSettings}
+          accessibilityRole="button"
+          accessibilityLabel={`주거래 은행 ${transferApp.name}, 변경`}
+        >
+          <Text style={styles.changeLabel}>
+            주거래 은행 · {transferApp.name}
+          </Text>
+          <Text style={styles.changeAction}>변경</Text>
+          <ChevronRight size={14} color="#0062cc" strokeWidth={2.4} />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.row}>
         <TouchableOpacity style={styles.secondary} onPress={handleCopy}>
@@ -389,16 +443,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: 'Menlo',
   },
+  sendBlock: { gap: 4 },
   primary: {
-    paddingVertical: 16,
+    minHeight: 54,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 12,
     backgroundColor: '#007aff',
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
+    gap: 2,
   },
+  primaryRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   primaryText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  primarySub: { color: '#e8f1ff', fontSize: 12 },
+  changeRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  changeLabel: { fontSize: 13, color: '#555' },
+  changeAction: { fontSize: 13, color: '#0062cc', fontWeight: '600' },
   secondary: {
     flex: 1,
     paddingVertical: 14,

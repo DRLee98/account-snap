@@ -13,8 +13,16 @@ import {
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
-import { Archive, Clock, Pencil, Star, Trash2 } from 'lucide-react-native';
-import { openTossSend } from '../services/toss';
+import {
+  Archive,
+  Clock,
+  Pencil,
+  Settings,
+  Star,
+  Trash2,
+} from 'lucide-react-native';
+import { sendWithApp } from '../services/transfer/send';
+import { getTransferApp } from '../services/transfer/preference';
 import { formatAccountByBank } from '../services/ocr';
 import { Account } from '../models/account';
 import {
@@ -122,8 +130,21 @@ export default function AccountListScreen() {
               <Text style={styles.clearBtn}>비우기</Text>
             </Pressable>
           )}
-          <Pressable onPress={handleBackupMenu} hitSlop={8}>
+          <Pressable
+            onPress={handleBackupMenu}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="백업"
+          >
             <Archive size={20} color="#007aff" strokeWidth={2} />
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('TransferApp')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="주거래 은행 설정"
+          >
+            <Settings size={20} color="#007aff" strokeWidth={2} />
           </Pressable>
         </View>
       ),
@@ -173,8 +194,10 @@ export default function AccountListScreen() {
   };
 
   const handleSend = async (account: Account) => {
-    const sent = await openTossSend(account);
-    if (sent) {
+    const result = await sendWithApp(getTransferApp(), account, {
+      onChooseOtherApp: () => navigation.navigate('TransferApp'),
+    });
+    if (result !== 'failed') {
       markUsed(account.id);
       reload();
     }

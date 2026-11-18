@@ -12,6 +12,25 @@
       <action android:name="android.intent.action.VIEW" />
       <data android:scheme="supertoss" />
     </intent>
+    <!-- 주거래 은행 앱 실행(getLaunchIntentForPackage)용 패키지 가시성 — src/services/transfer/apps.ts와 맞춘다 -->
+    <package android:name="com.kakao.talk" />
+    <package android:name="com.kbstar.kbbank" />
+    <package android:name="com.shinhan.sbanking" />
+    <package android:name="com.wooribank.smart.npib" />
+    <package android:name="com.hanabank.oqf" />
+    <package android:name="com.kebhana.hanapush" />
+    <package android:name="com.nonghyup.nhallonebank" />
+    <package android:name="nh.smart.allonebank" />
+    <package android:name="nh.smart.banking" />
+    <package android:name="com.ibk.android.ionebank" />
+    <package android:name="com.kakaobank.channel" />
+    <package android:name="com.kbankwith.smartbank" />
+    <package android:name="com.epost.psf.sdsi" />
+    <package android:name="com.smg.spbs" />
+    <package android:name="kr.co.cu.onbank" />
+    <package android:name="kr.co.dgb.dgbm" />
+    <package android:name="kr.co.busanbank.mbp" />
+    <package android:name="com.knb.psb" />
   </queries>
 
   <application
