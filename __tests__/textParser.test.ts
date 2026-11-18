@@ -50,6 +50,27 @@ describe('parseAccountFromText', () => {
     expect(parsed!.candidates![0].accountNumber).toBe('110987654321');
   });
 
+  it('다른 단어에 붙은 숫자는 계좌번호에 합치지 않는다', () => {
+    // 실제 오인식 사례: "떡꼬치2"의 2가 계좌번호 앞에 붙었음
+    const parsed = parseAccountFromText(
+      '계좌이체 농협 소떡소떡 000 떡꼬치2 352-1805-9843-03 박성관',
+    );
+    expect(parsed!.accountNumber).toBe('3521805984303');
+
+    const trailing = parseAccountFromText('농협 352-1805-9843-03 2인분');
+    expect(trailing!.accountNumber).toBe('3521805984303');
+  });
+
+  it('은행명과 붙어 있는 단일 토큰 번호는 그대로 인식한다', () => {
+    const parsed = parseAccountFromText('농협352-1805-9843-03');
+    expect(parsed!.accountNumber).toBe('3521805984303');
+  });
+
+  it('공백으로 쪼개진 번호는 여전히 합친다', () => {
+    const parsed = parseAccountFromText('농협 / 정원욱 352 8311 0141 93');
+    expect(parsed!.accountNumber).toBe('3528311014193');
+  });
+
   it('OCR 신뢰도(baseConfidence)를 반영한다', () => {
     const parsed = parseAccountFromText('우리은행 1002-123-456789', 0.9);
     expect(parsed!.confidence).toBeCloseTo(0.9);

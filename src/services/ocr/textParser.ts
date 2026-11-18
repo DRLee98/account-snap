@@ -139,6 +139,32 @@ function splitMergedMatch(text: string, offset: number): NumberMatch[] {
   return parts.length > 1 ? parts : [];
 }
 
+const isLetter = (ch: string | undefined): boolean =>
+  !!ch && /[가-힣A-Za-z]/.test(ch);
+
+/**
+ * 공백으로 이어진 숫자 매치에서, 글자에 붙어 있던 앞뒤 토큰을 떼어낸다.
+ * "떡꼬치2 352-1805-9843-03"의 "2"나 "…-03 2인분"의 "2"는 다른 단어의 일부이므로
+ * 계좌번호에 합치지 않는다. 토큰이 하나뿐이면("농협352-…") 그대로 둔다.
+ */
+function trimWordGluedTokens(
+  text: string,
+  raw: string,
+  start: number,
+): { raw: string; start: number } {
+  const tokens = raw.split(/(\s+)/);
+  if (isLetter(text[start - 1]) && tokens.length > 2) {
+    const dropped = tokens.slice(0, 2).join('').length;
+    tokens.splice(0, 2);
+    start += dropped;
+  }
+  const end = start + tokens.join('').length;
+  if (isLetter(text[end]) && tokens.length > 2) {
+    tokens.splice(tokens.length - 2, 2);
+  }
+  return { raw: tokens.join(''), start };
+}
+
 /**
  * 자유 텍스트에서 계좌번호/은행명/예금주를 추출.
  *
@@ -158,12 +184,13 @@ export function parseAccountFromText(
   const seen = new Set<string>();
 
   for (let m = numRegex.exec(text); m; m = numRegex.exec(text)) {
-    const digits = m[0].replace(/[^\d]/g, '');
+    const { raw, start } = trimWordGluedTokens(text, m[0], m.index);
+    const digits = raw.replace(/[^\d]/g, '');
     let matches: NumberMatch[];
     if (digits.length > MAX_DIGITS) {
-      matches = splitMergedMatch(m[0], m.index);
+      matches = splitMergedMatch(raw, start);
     } else if (digits.length >= MIN_DIGITS) {
-      matches = [{ digits, start: m.index, end: m.index + m[0].length }];
+      matches = [{ digits, start, end: start + raw.length }];
     } else {
       continue;
     }
