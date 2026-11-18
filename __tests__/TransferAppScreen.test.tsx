@@ -23,7 +23,7 @@ const radios = (root: ReactTestRenderer.ReactTestInstance) =>
     { deep: false },
   );
 
-test('주거래 은행 화면: 기본은 토스, 누르면 선택이 저장된다', async () => {
+test('주거래 은행 화면: 처음엔 토스가 선택돼 있고, 누르면 선택이 저장된다', async () => {
   let tree!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     tree = ReactTestRenderer.create(<TransferAppScreen />);
@@ -36,7 +36,6 @@ test('주거래 은행 화면: 기본은 토스, 누르면 선택이 저장된�
       '계좌번호를 복사하고 앱을 열어요',
       '앱을 열지 않기',
       '토스',
-      '기본',
       'KB스타뱅킹',
       '계좌번호만 복사',
     ]),
@@ -44,6 +43,7 @@ test('주거래 은행 화면: 기본은 토스, 누르면 선택이 저장된�
   // iOS 테스트 환경: 경남은행은 빠진다. 실험 기능 묶음은 없다
   expect(all).not.toContain('BNK경남은행');
   expect(all).not.toContain('실험 기능');
+  expect(all).not.toContain('기본');
   // 예금주는 채워지지 않으므로 '받는 사람'이라고 쓰지 않는다
   expect(all.filter(t => t.includes('받는 사람'))).toEqual([]);
 

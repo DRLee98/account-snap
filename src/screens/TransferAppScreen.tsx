@@ -121,12 +121,7 @@ function AppRow({
         </View>
       )}
       <View style={styles.rowText}>
-        <View style={styles.nameRow}>
-          <Text style={styles.name}>{app.name}</Text>
-          {app.id === 'toss' && (
-            <Text style={[styles.badge, styles.badgeDefault]}>기본</Text>
-          )}
-        </View>
+        <Text style={styles.name}>{app.name}</Text>
         {app.hint ? <Text style={styles.hint}>{app.hint}</Text> : null}
       </View>
       {selected ? (
@@ -186,22 +181,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rowText: { flex: 1, gap: 2 },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
   name: { fontSize: 16, fontWeight: '500', color: '#222' },
-  badge: {
-    fontSize: 11,
-    fontWeight: '600',
-    borderRadius: 6,
-    overflow: 'hidden',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  badgeDefault: { color: '#0059c2', backgroundColor: '#e5f0ff' },
   hint: { fontSize: 13, color: '#6b6b6b', lineHeight: 18 },
   checkOn: {
     width: 24,
