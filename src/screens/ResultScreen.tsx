@@ -291,8 +291,7 @@ export default function ResultScreen() {
             )}
             <Text style={styles.primaryText}>{transferApp.sendLabel}</Text>
           </View>
-          {transferApp.mode === 'copyLaunch' ||
-          transferApp.mode === 'experimental' ? (
+          {transferApp.mode === 'copyLaunch' ? (
             <Text style={styles.primarySub}>
               계좌번호를 복사하고 앱을 열어요
             </Text>

@@ -32,7 +32,6 @@ test('주거래 은행 화면: 기본은 토스, 누르면 선택이 저장된�
   expect(all).toEqual(
     expect.arrayContaining([
       '계좌까지 자동으로 입력돼요',
-      '실험 기능',
       '계좌번호를 복사하고 앱을 열어요',
       '앱을 열지 않기',
       '토스',
@@ -41,8 +40,9 @@ test('주거래 은행 화면: 기본은 토스, 누르면 선택이 저장된�
       '계좌번호만 복사',
     ]),
   );
-  // iOS 테스트 환경: 경남은행은 빠진다
+  // iOS 테스트 환경: 경남은행은 빠진다. 실험 기능 묶음은 없다
   expect(all).not.toContain('BNK경남은행');
+  expect(all).not.toContain('실험 기능');
 
   const checked = () =>
     radios(tree.root)

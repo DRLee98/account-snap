@@ -30,8 +30,8 @@ export function clipboardTextFor(
 }
 
 /**
- * 카카오페이 계좌송금 링크. 공식 가이드의 파라미터지만 알림톡 전용이라
- * 외부 앱에서는 비공식이다 — 계좌가 안 채워질 수 있어 항상 복사와 함께 쓴다.
+ * 카카오페이 계좌송금 링크. 공식 가이드는 알림톡 전용이라고 하지만 외부 앱에서도
+ * 계좌가 채워지는 것을 실기기로 확인했다. 비공식이라 예고 없이 바뀔 수 있다.
  * 계좌번호에 하이픈이 있으면 열리지 않으므로 숫자만 넣는다.
  */
 export function kakaoPayUrl(account: SendAccount): string {
@@ -114,8 +114,6 @@ function showCopiedToast(app: TransferApp, account: SendAccount) {
   const text2 =
     app.mode === 'copyOnly'
       ? formatAccountByBank(digitsOf(account), bankCodeOf(account))
-      : app.mode === 'experimental'
-      ? '계좌가 채워지지 않으면 붙여넣기 하세요'
       : `${app.name} 이체 화면에서 붙여넣기 하세요`;
   Toast.show({ type: 'success', text1: '계좌번호를 복사했어요', text2 });
 }
@@ -154,6 +152,12 @@ export async function sendWithApp(
 
   if (app.mode === 'prefill') {
     const url = deepLinkFor(app, account);
+    if (url && !url.includes(digitsOf(account))) {
+      // 은행 코드를 몰라 계좌를 링크에 못 실었으면 붙여넣기용으로 복사해 둔다
+      Clipboard.setString(clipboardTextFor(app, account));
+      showCopiedToast(app, account);
+      await wait(TOAST_BEFORE_LAUNCH_MS);
+    }
     if (url && (await tryOpenUrl(url))) return 'opened';
     showOpenFailed(app, account, onChooseOtherApp);
     return 'failed';
@@ -163,9 +167,7 @@ export async function sendWithApp(
   showCopiedToast(app, account);
   await wait(TOAST_BEFORE_LAUNCH_MS);
 
-  const url = deepLinkFor(app, account);
-  const opened = url ? await tryOpenUrl(url) : await launchApp(app);
-  if (opened) return 'opened';
+  if (await launchApp(app)) return 'opened';
   showOpenFailed(app, account, onChooseOtherApp);
   return 'failed';
 }

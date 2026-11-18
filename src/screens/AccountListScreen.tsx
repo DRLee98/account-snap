@@ -141,6 +141,7 @@ export default function AccountListScreen() {
           <Pressable
             onPress={() => navigation.navigate('TransferApp')}
             hitSlop={8}
+            style={styles.settingsBtn}
             accessibilityRole="button"
             accessibilityLabel="주거래 은행 설정"
           >
@@ -450,6 +451,7 @@ const styles = StyleSheet.create({
   devButton: { marginTop: 24 },
   clearBtn: { color: '#c33', fontSize: 12, width: 60, textAlign: 'center' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  settingsBtn: { marginLeft: 4 },
   sendText: { color: '#007aff', fontSize: 14, fontWeight: '600' },
   swipeWrap: { marginBottom: 10, overflow: 'hidden', borderRadius: 12 },
   swipeBtn: {

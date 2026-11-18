@@ -23,7 +23,6 @@ const ACCENT = '#007aff';
 
 const SECTIONS: { mode: TransferMode; title: string }[] = [
   { mode: 'prefill', title: '계좌까지 자동으로 입력돼요' },
-  { mode: 'experimental', title: '실험 기능' },
   { mode: 'copyLaunch', title: '계좌번호를 복사하고 앱을 열어요' },
   { mode: 'copyOnly', title: '앱을 열지 않기' },
 ];
@@ -74,8 +73,9 @@ export default function TransferAppScreen() {
       <View style={styles.note}>
         <Info size={18} color="#666" strokeWidth={2} />
         <Text style={styles.noteText}>
-          받는 사람 계좌가 자동으로 채워지는 앱은 토스뿐이에요. 다른 앱은
-          계좌번호를 복사한 뒤 열어 드리니, 이체 화면에서 붙여넣기 해 주세요.
+          받는 사람 계좌가 자동으로 채워지는 앱은 토스와 카카오페이예요. 다른
+          앱은 계좌번호를 복사한 뒤 열어 드리니, 이체 화면에서 붙여넣기 해
+          주세요.
         </Text>
       </View>
     </ScrollView>
@@ -117,9 +117,6 @@ function AppRow({
           <Text style={styles.name}>{app.name}</Text>
           {app.id === 'toss' && (
             <Text style={[styles.badge, styles.badgeDefault]}>기본</Text>
-          )}
-          {app.mode === 'experimental' && (
-            <Text style={[styles.badge, styles.badgeExperimental]}>실험적</Text>
           )}
         </View>
         {app.hint ? <Text style={styles.hint}>{app.hint}</Text> : null}
@@ -196,7 +193,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   badgeDefault: { color: '#0059c2', backgroundColor: '#e5f0ff' },
-  badgeExperimental: { color: '#8a4500', backgroundColor: '#fff1e0' },
   hint: { fontSize: 13, color: '#6b6b6b', lineHeight: 18 },
   checkOn: {
     width: 24,

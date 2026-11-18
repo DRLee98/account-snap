@@ -149,7 +149,14 @@ describe('sendWithApp', () => {
     alert.mockRestore();
   });
 
-  const run = async (id: string, account = nh) => {
+  const run = async (
+    id: string,
+    account: {
+      bankName: string;
+      bankCode?: string;
+      accountNumber: string;
+    } = nh,
+  ) => {
     const p = sendWithApp(app(id), account, { onChooseOtherApp });
     await jest.advanceTimersByTimeAsync(1000);
     return p;
@@ -208,11 +215,19 @@ describe('sendWithApp', () => {
     expect(alert).toHaveBeenCalledTimes(1);
   });
 
-  it('카카오페이: 복사하고 카카오톡 송금 링크를 연다', async () => {
+  it('카카오페이: 토스처럼 복사 없이 계좌가 실린 송금 링크를 연다', async () => {
     openURL.mockResolvedValue(true);
     expect(await run('kakaopay')).toBe('opened');
-    expect(Clipboard.setString).toHaveBeenCalledWith('3521805984303');
     expect(openURL).toHaveBeenCalledWith(kakaoPayUrl(nh));
+    expect(Clipboard.setString).not.toHaveBeenCalled();
+  });
+
+  it('카카오페이: 은행을 몰라 계좌를 링크에 못 실으면 복사해 둔다', async () => {
+    openURL.mockResolvedValue(true);
+    const unknown = { bankName: '(은행 미확인)', accountNumber: '1234567890' };
+    expect(await run('kakaopay', unknown)).toBe('opened');
+    expect(openURL).toHaveBeenCalledWith('kakaotalk://kakaopay/money/to/bank');
+    expect(Clipboard.setString).toHaveBeenCalledWith('1234567890');
   });
 
   it('복사만 하기: 앱을 열지 않는다', async () => {
