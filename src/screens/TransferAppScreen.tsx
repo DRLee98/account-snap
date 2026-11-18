@@ -21,8 +21,12 @@ import {
 
 const ACCENT = '#007aff';
 
-const SECTIONS: { mode: TransferMode; title: string }[] = [
-  { mode: 'prefill', title: '계좌까지 자동으로 입력돼요' },
+const SECTIONS: { mode: TransferMode; title: string; desc?: string }[] = [
+  {
+    mode: 'prefill',
+    title: '계좌까지 자동으로 입력돼요',
+    desc: '은행·계좌번호가 채워진 송금 화면이 열려요',
+  },
   { mode: 'copyLaunch', title: '계좌번호를 복사하고 앱을 열어요' },
   { mode: 'copyOnly', title: '앱을 열지 않기' },
 ];
@@ -52,9 +56,14 @@ export default function TransferAppScreen() {
         if (items.length === 0) return null;
         return (
           <View key={section.mode} style={styles.section}>
-            <Text style={styles.sectionTitle} accessibilityRole="header">
-              {section.title}
-            </Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle} accessibilityRole="header">
+                {section.title}
+              </Text>
+              {section.desc ? (
+                <Text style={styles.sectionDesc}>{section.desc}</Text>
+              ) : null}
+            </View>
             <View style={styles.group} accessibilityRole="radiogroup">
               {items.map((app, i) => (
                 <AppRow
@@ -73,9 +82,8 @@ export default function TransferAppScreen() {
       <View style={styles.note}>
         <Info size={18} color="#666" strokeWidth={2} />
         <Text style={styles.noteText}>
-          받는 사람 계좌가 자동으로 채워지는 앱은 토스와 카카오페이예요. 다른
-          앱은 계좌번호를 복사한 뒤 열어 드리니, 이체 화면에서 붙여넣기 해
-          주세요.
+          계좌가 자동으로 채워지는 앱은 토스와 카카오페이예요. 다른 앱은
+          계좌번호를 복사한 뒤 열어 드리니, 이체 화면에서 붙여넣기 해 주세요.
         </Text>
       </View>
     </ScrollView>
@@ -144,12 +152,13 @@ const styles = StyleSheet.create({
   },
   introSub: { fontSize: 14, color: '#666', lineHeight: 21 },
   section: { paddingHorizontal: 20, paddingTop: 20, gap: 8 },
+  sectionHeader: { paddingHorizontal: 4, gap: 2 },
   sectionTitle: {
-    paddingHorizontal: 4,
     fontSize: 13,
     fontWeight: '600',
     color: '#666',
   },
+  sectionDesc: { fontSize: 11, color: '#6b6b6b', lineHeight: 15 },
   group: { backgroundColor: '#f4f4f4', borderRadius: 12, overflow: 'hidden' },
   row: {
     minHeight: 60,

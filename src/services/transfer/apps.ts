@@ -3,7 +3,7 @@ import type { ImageSourcePropType } from 'react-native';
 /**
  * 송금 버튼이 여는 앱 ("주거래 은행").
  *
- * - prefill: 받는 사람 은행·계좌가 채워진 송금 화면을 연다 (토스, 카카오페이 — 실기기 확인)
+ * - prefill: 은행·계좌번호가 채워진 송금 화면을 연다 (토스, 카카오페이 — 실기기 확인)
  * - copyLaunch: 계좌번호를 복사하고 앱을 실행만 한다 (은행 앱 — 이체 자동입력 딥링크 없음)
  * - copyOnly: 앱을 열지 않고 복사만
  *
@@ -57,7 +57,6 @@ export const TRANSFER_APPS: TransferApp[] = [
     name: '토스',
     sendLabel: '토스로 송금하기',
     mode: 'prefill',
-    hint: '받는 사람 은행·계좌번호가 채워진 송금 화면이 열려요',
     icon: require('../../../assets/transfer-apps/toss.png'),
     ios: { schemes: ['supertoss'], appStoreId: '839333328' },
     android: { packages: ['viva.republica.toss'] },
@@ -67,7 +66,6 @@ export const TRANSFER_APPS: TransferApp[] = [
     name: '카카오페이',
     sendLabel: '카카오페이로 송금하기',
     mode: 'prefill',
-    hint: '받는 사람 은행·계좌번호가 채워진 송금 화면이 열려요',
     icon: require('../../../assets/transfer-apps/kakaopay.png'),
     // 송금은 카카오톡 안의 카카오페이에서 열린다
     ios: { schemes: ['kakaotalk'], appStoreId: '362057947' },
