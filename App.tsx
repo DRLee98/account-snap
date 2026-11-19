@@ -9,6 +9,7 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import { toastConfig } from './src/components/toastConfig';
 import BootSplash from 'react-native-bootsplash';
 import AppNavigator, {
   handleCopyDeepLink,
@@ -98,7 +99,7 @@ export default function App() {
       <SafeAreaProvider>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <AppNavigator />
-        <Toast swipeable />
+        <Toast swipeable config={toastConfig} />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -4,7 +4,12 @@ import {
   createNavigationContainerRef,
   CommonActions,
 } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationOptions,
+} from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import FavoriteHeaderButton from '../components/FavoriteHeaderButton';
 import Clipboard from '@react-native-clipboard/clipboard';
 import AccountListScreen from '../screens/AccountListScreen';
 import CameraScreen from '../screens/CameraScreen';
@@ -33,6 +38,22 @@ const linking: LinkingOptions<RootStackParamList> = {
   },
 };
 
+/**
+ * 결과 화면: 계좌는 인식 직후 이미 목록에 저장돼 있어 '완료' 버튼 없이 뒤로 가기로 나간다
+ * (뒤로 = 카메라). 오른쪽 위는 즐겨찾기 별.
+ */
+const resultScreenOptions = ({
+  route,
+}: {
+  route: RouteProp<RootStackParamList, 'Result'>;
+}): NativeStackNavigationOptions => ({
+  title: '결과',
+  headerBackButtonDisplayMode: 'minimal',
+  headerRight: () => (
+    <FavoriteHeaderButton accountId={route.params.accountId} />
+  ),
+});
+
 export default function AppNavigator() {
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
@@ -59,11 +80,7 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Result"
           component={ResultScreen}
-          options={{
-            title: '결과',
-            headerBackVisible: false,
-            gestureEnabled: false,
-          }}
+          options={resultScreenOptions}
         />
         <Stack.Screen
           name="Edit"

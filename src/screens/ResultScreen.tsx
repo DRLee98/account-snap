@@ -1,6 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,62 +18,120 @@ import {
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 import {
-  Building2,
   ChevronRight,
-  Copy as CopyIcon,
-  Paintbrush,
-  Star,
-  Tag,
-  User,
+  CircleAlert,
+  CircleCheck,
+  Pencil,
 } from 'lucide-react-native';
+import AccountPhoto, { REGION_COLORS } from '../components/AccountPhoto';
 import AdFitBanner, { AD_CLIENT_IDS } from '../components/AdFitBanner';
+import BankPicker from '../components/BankPicker';
 import SendButton from '../components/SendButton';
 import { Account, normalizeAccountNumber } from '../models/account';
 import {
   deleteAccount,
   getAccount,
   markUsed,
-  toggleFavorite,
   updateAccount,
 } from '../services/storage';
 import { sendWithApp } from '../services/transfer/send';
 import { getTransferApp } from '../services/transfer/preference';
+// 바렐(services/ocr) 대신 직접 가져온다 — CLOVA 클라이언트(react-native-config)까지 끌려오지 않게
 import {
-  findBankByText,
+  BANK_PATTERNS,
   formatAccountByBank,
   inferBankByAccountNumber,
-  ParsedAccount,
-} from '../services/ocr';
+  isPhoneFormatNumber,
+  matchesBankFormat,
+} from '../services/ocr/bankPatterns';
+import type { ParsedAccount } from '../services/ocr/types';
 import { RootStackParamList } from '../navigation/types';
 
+export const UNKNOWN_BANK = '(은행 미확인)';
+const WARN = '#d26a00';
+const HEADER_HEIGHT = Platform.OS === 'ios' ? 44 : 56;
+
+const isUnknownBank = (name?: string) => !name?.trim() || name === UNKNOWN_BANK;
+
+type Phase = 'pick' | 'confirm';
+
+/**
+ * 결과 화면 (APP-012).
+ * - 확인 카드: 값을 눌러 고친다. 은행은 목록 시트, 복사는 번호 옆, 송금 버튼은 아래 고정
+ * - 사진에 은행·계좌번호·예금주를 읽은 자리를 색 상자로, 카드 라벨 앞 점도 같은 색
+ * - 확인이 필요할 때만 묻기: 계좌가 여러 개면 먼저 고르기, 은행을 추정했으면 주황색으로 표시
+ */
 export default function ResultScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'Result'>>();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
+  const options: ParsedAccount[] = route.params.options ?? [];
+  const regionUnit = route.params.regionUnit ?? 'px';
+
   const [account, setAccount] = useState<Account | undefined>(() =>
     getAccount(route.params.accountId),
   );
-  const [candidates, setCandidates] = useState<ParsedAccount[]>(
-    route.params.candidates ?? [],
+  const [phase, setPhase] = useState<Phase>(
+    options.length > 1 ? 'pick' : 'confirm',
   );
-
-  const [bankName, setBankName] = useState(account?.bankName ?? '');
+  const [picked, setPicked] = useState(0);
+  // 사진 글자에 은행이 없어 계좌번호로 추정한 은행 — 고치지 않고 송금하면 이 은행으로 넘긴다
+  const [bankGuessed, setBankGuessed] = useState(!!options[0]?.bankInferred);
   const [accountNumber, setAccountNumber] = useState(
     account ? formatAccountByBank(account.accountNumber, account.bankCode) : '',
   );
   const [holderName, setHolderName] = useState(account?.holderName ?? '');
   const [label, setLabel] = useState(account?.label ?? '');
+  const [bankPickerOpen, setBankPickerOpen] = useState(false);
+  const [keyboardShown, setKeyboardShown] = useState(false);
   const [transferApp, setTransferApp] = useState(getTransferApp);
 
-  // 주거래 은행 화면에서 돌아오면 버튼 문구를 갱신
+  // 주거래 은행 화면에서 돌아오면 버튼을 갱신
   useFocusEffect(
     useCallback(() => {
       setTransferApp(getTransferApp());
     }, []),
   );
+
+  // 키보드가 올라오면 아래 송금 버튼은 잠시 숨긴다 (입력칸이 가려지지 않게)
+  useEffect(() => {
+    const ios = Platform.OS === 'ios';
+    const show = Keyboard.addListener(
+      ios ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setKeyboardShown(true),
+    );
+    const hide = Keyboard.addListener(
+      ios ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardShown(false),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  const showSaved = useCallback(() => {
+    Toast.show({
+      type: 'saved',
+      text1: '목록에 저장하고 계좌번호를 복사했어요',
+      position: 'top',
+      topOffset: insets.top + HEADER_HEIGHT + 8,
+      visibilityTime: 2500,
+    });
+  }, [insets.top]);
+
+  // 계좌가 하나면 들어오자마자, 여러 개면 고른 뒤에 저장 알림을 띄운다
+  const announced = useRef(false);
+  useEffect(() => {
+    if (announced.current || !account || phase !== 'confirm') return;
+    announced.current = true;
+    showSaved();
+  }, [account, phase, showSaved]);
 
   if (!account) {
     return (
@@ -81,47 +141,58 @@ export default function ResultScreen() {
     );
   }
 
-  const persist = (
-    patch: Partial<
-      Pick<
-        Account,
-        'bankName' | 'accountNumber' | 'bankCode' | 'holderName' | 'label'
-      >
-    >,
-  ) => {
+  const persist = (patch: Partial<Account>) => {
     const updated = updateAccount(account.id, patch);
     if (updated) setAccount(updated);
+    return updated;
   };
 
-  const handleBankBlur = () => {
-    const trimmed = bankName.trim();
-    if (trimmed === account.bankName) return;
-    // 코드를 같이 갱신하지 않으면 송금 링크가 옛 은행 코드로 열린다
+  const bankUnknown = isUnknownBank(account.bankName);
+  const bankNeedsCheck = bankGuessed || bankUnknown;
+  const digits = account.accountNumber;
+
+  const handlePick = (index: number) => {
+    const o = options[index];
     persist({
-      bankName: trimmed || '(은행 미확인)',
-      bankCode: findBankByText(trimmed)?.code,
+      accountNumber: o.accountNumber,
+      bankName: o.bankName || UNKNOWN_BANK,
+      bankCode: o.bankCode,
+      holderName: o.holderName,
     });
+    setAccountNumber(formatAccountByBank(o.accountNumber, o.bankCode));
+    setHolderName(o.holderName ?? '');
+    setBankGuessed(!!o.bankInferred);
+    setPicked(index);
+    setPhase('confirm');
+    Clipboard.setString(o.accountNumber);
+    announced.current = true;
+    showSaved();
+  };
+
+  const handleSelectBank = (bankName: string, bankCode?: string) => {
+    persist({ bankName, bankCode });
+    setBankGuessed(false);
+    setAccountNumber(formatAccountByBank(account.accountNumber, bankCode));
   };
 
   const handleAccountBlur = () => {
     const normalized = normalizeAccountNumber(accountNumber);
-    if (normalized === account.accountNumber) return;
-    if (normalized.length < 8) return;
-    // 계좌번호 변경 시 prefix로 은행 재추론 (텍스트로 은행이 비어있을 때만)
-    const inferred =
-      !account.bankName.trim() || account.bankName === '(은행 미확인)'
-        ? inferBankByAccountNumber(normalized)
-        : undefined;
-    const patch: Partial<Account> = { accountNumber: normalized };
-    if (inferred) {
-      patch.bankName = inferred.name;
-      patch.bankCode = inferred.code;
+    if (normalized === account.accountNumber || normalized.length < 8) {
+      setAccountNumber(
+        formatAccountByBank(account.accountNumber, account.bankCode),
+      );
+      return;
     }
-    persist(patch);
-    setAccountNumber(
-      formatAccountByBank(normalized, inferred?.code ?? account.bankCode),
-    );
-    if (inferred) setBankName(inferred.name);
+    const patch: Partial<Account> = { accountNumber: normalized };
+    // 은행이 추정값이거나 비어 있으면 바뀐 번호로 다시 추정한다
+    if (bankNeedsCheck) {
+      const inferred = inferBankByAccountNumber(normalized);
+      patch.bankName = inferred?.name ?? UNKNOWN_BANK;
+      patch.bankCode = inferred?.code;
+      setBankGuessed(!!inferred);
+    }
+    const updated = persist(patch);
+    setAccountNumber(formatAccountByBank(normalized, updated?.bankCode));
   };
 
   const handleHolderBlur = () => {
@@ -139,19 +210,12 @@ export default function ResultScreen() {
   const handleCopy = () => {
     Clipboard.setString(account.accountNumber);
     markUsed(account.id);
-    setAccount(getAccount(account.id));
     Toast.show({
       type: 'success',
       text1: '계좌번호 복사됨',
       text2: formatAccountByBank(account.accountNumber, account.bankCode),
-      autoHide: true,
       visibilityTime: 1000,
     });
-  };
-
-  const handleToggleFav = () => {
-    toggleFavorite(account.id);
-    setAccount(getAccount(account.id));
   };
 
   const openTransferAppSettings = () => navigation.navigate('TransferApp');
@@ -160,271 +224,399 @@ export default function ResultScreen() {
     const result = await sendWithApp(transferApp, account, {
       onChooseOtherApp: openTransferAppSettings,
     });
-    if (result !== 'failed') {
-      markUsed(account.id);
-      setAccount(getAccount(account.id));
-    }
+    if (result !== 'failed') markUsed(account.id);
   };
 
-  const handleSelectCandidate = (c: ParsedAccount, idx: number) => {
-    // 현재 primary를 candidates 맨 위로 보내고 선택한 c를 primary로
-    const prev: ParsedAccount = {
-      accountNumber: account.accountNumber,
-      bankName: account.bankName,
-      bankCode: account.bankCode,
-      holderName: account.holderName,
-      confidence: 0,
-    };
-    const next = [...candidates];
-    next.splice(idx, 1);
-    next.unshift(prev);
-    setCandidates(next);
-    persist({
-      accountNumber: c.accountNumber,
-      bankName: c.bankName || '(은행 미확인)',
-      bankCode: c.bankCode,
-    });
-    setBankName(c.bankName || '');
-    setAccountNumber(formatAccountByBank(c.accountNumber, c.bankCode));
-  };
+  const handleRedo = account.originalImageUri
+    ? () => {
+        const uri = account.originalImageUri!;
+        deleteAccount(account.id);
+        navigation.replace('Crop', { sourceUri: uri });
+      }
+    : undefined;
+
+  const regions = phase === 'confirm' ? options[picked]?.regions : undefined;
+  const hasRegions = !!regions && Object.keys(regions).length > 0;
+
+  const sendSubtitle =
+    phase === 'pick'
+      ? '보낼 계좌를 골라 주세요'
+      : bankUnknown && transferApp.mode === 'prefill'
+      ? '은행을 고르면 계좌까지 채워진 화면이 열려요'
+      : undefined;
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={insets.top + HEADER_HEIGHT}
     >
-      <View style={styles.imageBox}>
-        {account.sourceImageUri && (
-          <Image
-            source={{ uri: account.sourceImageUri }}
-            style={styles.image}
-            resizeMode="cover"
-          />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AccountPhoto
+          uri={account.sourceImageUri}
+          regions={regions}
+          regionUnit={regionUnit}
+          onRedo={handleRedo}
+        />
+
+        {phase === 'pick' ? (
+          <>
+            <Notice
+              title={`사진에서 계좌가 ${options.length}개 보여요`}
+              desc="보낼 계좌를 골라 주세요. 고른 계좌만 목록에 남아요."
+            />
+            {options.map((o, i) => (
+              <Pressable
+                key={`${o.accountNumber}-${i}`}
+                style={styles.pickCard}
+                onPress={() => handlePick(i)}
+                accessibilityRole="button"
+              >
+                <View style={styles.pickTexts}>
+                  <Text style={styles.pickBank}>
+                    {o.bankName || '(은행 미상)'}
+                  </Text>
+                  <Text style={styles.pickNumber}>
+                    {formatAccountByBank(o.accountNumber, o.bankCode)}
+                  </Text>
+                  {o.holderName ? (
+                    <Text style={styles.pickHolder}>예금주 {o.holderName}</Text>
+                  ) : null}
+                </View>
+                <ChevronRight size={18} color="#b4b4ba" strokeWidth={2.2} />
+              </Pressable>
+            ))}
+            <Text style={styles.hint}>
+              누르면 계좌 정보를 확인하고 고칠 수 있어요
+            </Text>
+          </>
+        ) : (
+          <>
+            {options.length > 1 ? (
+              <Pressable
+                style={styles.switchRow}
+                onPress={() => setPhase('pick')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.switchText}>
+                  사진에서 계좌 {options.length}개를 찾았어요
+                </Text>
+                <Text style={styles.switchAction}>다른 계좌로 바꾸기</Text>
+                <ChevronRight size={14} color="#007aff" strokeWidth={2.4} />
+              </Pressable>
+            ) : null}
+
+            <View style={styles.card}>
+              <Pressable
+                style={[styles.row, styles.rowDivider]}
+                onPress={() => setBankPickerOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`은행 ${
+                  bankUnknown ? '선택 안 됨' : account.bankName
+                }, 바꾸기`}
+              >
+                <Dot color={REGION_COLORS.bank} hollow={bankNeedsCheck} />
+                <Text style={styles.rowLabel}>은행</Text>
+                <Text
+                  style={[styles.bankValue, bankNeedsCheck && styles.warnText]}
+                  numberOfLines={1}
+                >
+                  {bankUnknown ? '선택해 주세요' : account.bankName}
+                </Text>
+                <ChevronRight
+                  size={16}
+                  color={bankNeedsCheck ? WARN : '#b4b4ba'}
+                  strokeWidth={2.2}
+                />
+              </Pressable>
+              {bankNeedsCheck ? (
+                <Text style={styles.bankNote}>
+                  {bankUnknown
+                    ? '사진에서 은행을 찾지 못했어요.\n고르면 송금 앱에 계좌까지 채워져요'
+                    : '사진에 은행이 없어 계좌번호로 추정했어요.\n다른 은행이면 눌러서 바꿔 주세요'}
+                </Text>
+              ) : null}
+
+              <View style={[styles.numberBlock, styles.rowDivider]}>
+                <View style={styles.numberLabelRow}>
+                  <Dot color={REGION_COLORS.number} />
+                  <Text style={styles.smallLabel}>계좌번호</Text>
+                </View>
+                <View style={styles.numberRow}>
+                  <TextInput
+                    value={accountNumber}
+                    onChangeText={setAccountNumber}
+                    onBlur={handleAccountBlur}
+                    keyboardType="number-pad"
+                    style={styles.numberInput}
+                    accessibilityLabel="계좌번호"
+                  />
+                  <TouchableOpacity
+                    style={styles.copyBtn}
+                    onPress={handleCopy}
+                    accessibilityRole="button"
+                    accessibilityLabel="계좌번호 복사"
+                  >
+                    <Text style={styles.copyText}>복사</Text>
+                  </TouchableOpacity>
+                </View>
+                {bankNeedsCheck ? null : (
+                  <FormatCheck digits={digits} bankCode={account.bankCode} />
+                )}
+              </View>
+
+              <View style={[styles.row, styles.rowDivider]}>
+                <Dot color={REGION_COLORS.holder} />
+                <Text style={styles.rowLabel}>예금주</Text>
+                <TextInput
+                  value={holderName}
+                  onChangeText={setHolderName}
+                  onBlur={handleHolderBlur}
+                  placeholder="(선택) 홍길동"
+                  placeholderTextColor="#b4b4ba"
+                  style={styles.rowInput}
+                  accessibilityLabel="예금주"
+                />
+                <Pencil size={15} color="#b4b4ba" strokeWidth={2} />
+              </View>
+
+              <View style={styles.row}>
+                <Dot />
+                <Text style={styles.rowLabel}>별칭</Text>
+                <TextInput
+                  value={label}
+                  onChangeText={setLabel}
+                  onBlur={handleLabelBlur}
+                  placeholder="(선택) 자주 가는 분식집"
+                  placeholderTextColor="#b4b4ba"
+                  style={styles.rowInput}
+                  accessibilityLabel="별칭"
+                />
+                <Pencil size={15} color="#b4b4ba" strokeWidth={2} />
+              </View>
+            </View>
+
+            <Text style={styles.hint}>
+              {hasRegions
+                ? '사진의 같은 색 상자에서 읽은 값이에요 · 눌러서 고칠 수 있어요'
+                : '잘못 읽은 값은 눌러서 고칠 수 있어요'}
+            </Text>
+          </>
         )}
-        {account.originalImageUri ? (
-          <TouchableOpacity
-            style={styles.redo}
-            onPress={() => {
-              const uri = account.originalImageUri!;
-              deleteAccount(account.id);
-              navigation.replace('Crop', { sourceUri: uri });
-            }}
-          >
-            <Paintbrush size={14} color="#666" strokeWidth={2} />
-            <Text style={styles.redoText}>영역 다시 칠하기</Text>
-          </TouchableOpacity>
+
+        {AD_CLIENT_IDS.result ? (
+          <View style={styles.adWrap}>
+            <AdFitBanner
+              clientId={AD_CLIENT_IDS.result}
+              width={320}
+              height={100}
+            />
+          </View>
         ) : null}
-      </View>
+      </ScrollView>
 
-      {/* <Text style={styles.disclaimer}>OCR 직후 자동 복사됨.</Text> */}
-      <Text style={styles.disclaimer}>
-        잘못 인식된 값이 있다면 아래 필드를 탭해서 수정해주세요.
-      </Text>
-
-      <View style={styles.card}>
-        <Field
-          icon={<Building2 size={16} color="#666" strokeWidth={2} />}
-          label="은행"
-          value={bankName}
-          onChangeText={setBankName}
-          onBlur={handleBankBlur}
-          placeholder="은행명"
-        />
-        <Field
-          label="계좌번호"
-          value={accountNumber}
-          onChangeText={setAccountNumber}
-          onBlur={handleAccountBlur}
-          placeholder="계좌번호"
-          keyboardType="number-pad"
-          big
-        />
-        <Field
-          icon={<User size={14} color="#666" strokeWidth={2} />}
-          label="예금주"
-          value={holderName}
-          onChangeText={setHolderName}
-          onBlur={handleHolderBlur}
-          placeholder="(선택) 홍길동"
-        />
-        <Field
-          icon={<Tag size={14} color="#666" strokeWidth={2} />}
-          label="별칭"
-          value={label}
-          onChangeText={setLabel}
-          onBlur={handleLabelBlur}
-          placeholder="(선택) 자주가는 분식집"
-        />
-      </View>
-
-      {candidates.length > 0 && (
-        <View style={styles.candidatesBox}>
-          <Text style={styles.candidatesTitle}>다른 후보 (탭해서 변경)</Text>
-          {candidates.map((c, i) => (
-            <Pressable
-              key={`${c.accountNumber}-${i}`}
-              style={styles.candidateRow}
-              onPress={() => handleSelectCandidate(c, i)}
-            >
-              <Text style={styles.candidateBank}>
-                {c.bankName || '(은행 미상)'}
-              </Text>
-              <Text style={styles.candidateNum}>
-                {formatAccountByBank(c.accountNumber, c.bankCode)}
-              </Text>
-            </Pressable>
-          ))}
+      {keyboardShown ? null : (
+        <View
+          style={[
+            styles.bottomBar,
+            { paddingBottom: Math.max(insets.bottom, 12) },
+          ]}
+        >
+          <SendButton
+            app={transferApp}
+            onPress={handleSend}
+            disabled={phase === 'pick'}
+            subtitle={sendSubtitle}
+          />
+          <TouchableOpacity
+            style={styles.changeRow}
+            onPress={openTransferAppSettings}
+            accessibilityRole="button"
+            accessibilityLabel={`주거래 은행 ${transferApp.name}, 변경`}
+          >
+            <Text style={styles.changeLabel}>
+              주거래 은행 · {transferApp.name}
+            </Text>
+            <Text style={styles.changeAction}>변경</Text>
+            <ChevronRight size={14} color="#0062cc" strokeWidth={2.4} />
+          </TouchableOpacity>
         </View>
       )}
 
-      <View style={styles.sendBlock}>
-        <SendButton app={transferApp} onPress={handleSend} />
-        <TouchableOpacity
-          style={styles.changeRow}
-          onPress={openTransferAppSettings}
-          accessibilityRole="button"
-          accessibilityLabel={`주거래 은행 ${transferApp.name}, 변경`}
-        >
-          <Text style={styles.changeLabel}>
-            주거래 은행 · {transferApp.name}
-          </Text>
-          <Text style={styles.changeAction}>변경</Text>
-          <ChevronRight size={14} color="#0062cc" strokeWidth={2.4} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.row}>
-        <TouchableOpacity style={styles.secondary} onPress={handleCopy}>
-          <CopyIcon size={16} color="#007aff" strokeWidth={2.2} />
-          <Text style={styles.secondaryText}>계좌번호 복사</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.secondary} onPress={handleToggleFav}>
-          <Star
-            size={16}
-            color="#007aff"
-            strokeWidth={2}
-            fill={account.isFavorite ? '#007aff' : 'transparent'}
-          />
-          <Text style={styles.secondaryText}>
-            {account.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={styles.tertiary}
-        onPress={() => navigation.popToTop()}
-      >
-        <Text style={styles.tertiaryText}>완료</Text>
-      </TouchableOpacity>
-
-      {AD_CLIENT_IDS.result ? (
-        <View style={styles.adWrap}>
-          <AdFitBanner
-            clientId={AD_CLIENT_IDS.result}
-            width={320}
-            height={100}
-          />
-        </View>
-      ) : null}
-    </ScrollView>
+      <BankPicker
+        visible={bankPickerOpen}
+        current={bankUnknown ? undefined : account.bankName}
+        onClose={() => setBankPickerOpen(false)}
+        onSelect={handleSelectBank}
+      />
+    </KeyboardAvoidingView>
   );
 }
 
-function Field({
-  icon,
-  label,
-  value,
-  onChangeText,
-  onBlur,
-  placeholder,
-  keyboardType,
-  big,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  onBlur: () => void;
-  placeholder?: string;
-  keyboardType?: 'default' | 'number-pad';
-  big?: boolean;
-}) {
+/** 카드 라벨 앞 점 — 사진 상자와 같은 색. hollow는 사진에서 못 찾은 값(주황 테두리) */
+function Dot({ color, hollow }: { color?: string; hollow?: boolean }) {
+  if (hollow) return <View style={[styles.dot, styles.dotHollow]} />;
   return (
-    <View style={styles.field}>
-      <View style={styles.fieldLabelRow}>
-        {icon}
-        <Text style={styles.fieldLabel}>{label}</Text>
+    <View
+      style={[styles.dot, color ? { backgroundColor: color } : styles.dotSpace]}
+    />
+  );
+}
+
+function Notice({ title, desc }: { title: string; desc: string }) {
+  return (
+    <View style={styles.notice} accessibilityRole="alert">
+      <CircleAlert size={18} color="#a36b00" strokeWidth={2.2} />
+      <View style={styles.noticeTexts}>
+        <Text style={styles.noticeTitle}>{title}</Text>
+        <Text style={styles.noticeDesc}>{desc}</Text>
       </View>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        onBlur={onBlur}
-        placeholder={placeholder}
-        placeholderTextColor="#bbb"
-        keyboardType={keyboardType ?? 'default'}
-        style={[styles.input, big && styles.inputBig]}
-      />
+    </View>
+  );
+}
+
+/** 은행의 알려진 자릿수와 맞는지 — 맞으면 확인 표시, 다르면 다시 보라고 알린다 */
+export function FormatCheck({
+  digits,
+  bankCode,
+}: {
+  digits: string;
+  bankCode?: string;
+}) {
+  const bank = BANK_PATTERNS.find(b => b.code === bankCode);
+  if (!bank?.lengths || isPhoneFormatNumber(digits)) return null;
+  const ok = matchesBankFormat(digits, bankCode);
+  return (
+    <View style={styles.formatRow}>
+      {ok ? (
+        <CircleCheck size={14} color="#1d7a3a" strokeWidth={2.2} />
+      ) : (
+        <CircleAlert size={14} color={WARN} strokeWidth={2.2} />
+      )}
+      <Text style={[styles.formatText, ok ? styles.okText : styles.warnText]}>
+        {ok
+          ? `${bank.name} 계좌번호 형식(${digits.length}자리)과 맞아요`
+          : `${bank.name} 계좌번호 형식과 달라요. 번호를 확인해 주세요`}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, gap: 14 },
+  root: { flex: 1, backgroundColor: '#f2f2f2' },
+  scroll: { flex: 1 },
+  content: { padding: 20, paddingTop: 14, gap: 12 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notFound: { fontSize: 16, color: '#666' },
-  imageBox: {
-    position: 'relative',
-  },
-  image: {
-    width: '100%',
-    height: 200,
+  notice: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 12,
+    paddingHorizontal: 14,
     borderRadius: 12,
-    backgroundColor: '#eee',
+    borderWidth: 1,
+    borderColor: '#f2d49b',
+    backgroundColor: '#fff6e5',
   },
-  card: {
-    paddingVertical: 12,
-    backgroundColor: '#f4f4f4',
-    borderRadius: 12,
+  noticeTexts: { flex: 1, gap: 2 },
+  noticeTitle: { fontSize: 14, fontWeight: '700', color: '#8a5300' },
+  noticeDesc: { fontSize: 12, lineHeight: 17, color: '#8a5300' },
+  pickCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
-  },
-  field: { gap: 4 },
-  fieldLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  fieldLabel: { fontSize: 12, color: '#666' },
-  input: {
+    paddingVertical: 14,
+    paddingLeft: 16,
+    paddingRight: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#dedee3',
     backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
+  },
+  pickTexts: { flex: 1, gap: 2 },
+  pickBank: { fontSize: 13, color: '#666' },
+  pickNumber: { fontSize: 20, fontWeight: '700', color: '#222' },
+  pickHolder: { fontSize: 12, color: '#8e8e93' },
+  switchRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 14,
+    paddingRight: 12,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+  },
+  switchText: { flex: 1, fontSize: 13, color: '#555' },
+  switchAction: { fontSize: 13, fontWeight: '600', color: '#007aff' },
+  card: {
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+  },
+  row: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  rowDivider: { borderBottomWidth: 1, borderBottomColor: '#f0f0f2' },
+  rowLabel: { width: 52, fontSize: 13, color: '#8e8e93' },
+  rowInput: { flex: 1, paddingVertical: 10, fontSize: 15, color: '#222' },
+  bankValue: { flex: 1, fontSize: 16, fontWeight: '600', color: '#222' },
+  bankNote: {
+    // 점 8 + 간격 8 + 라벨 52 + 간격 8
+    paddingLeft: 76,
+    paddingBottom: 12,
+    marginTop: -6,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#8e8e93',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f2',
+  },
+  warnText: { color: WARN },
+  okText: { color: '#1d7a3a' },
+  numberBlock: { paddingVertical: 12, gap: 4 },
+  numberLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  smallLabel: { fontSize: 12, color: '#8e8e93' },
+  numberRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  numberInput: {
+    flex: 1,
+    paddingVertical: 2,
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: 0.5,
     color: '#222',
   },
-  inputBig: { fontSize: 20, fontWeight: '700', letterSpacing: 0.5 },
-  candidatesBox: {
-    padding: 14,
-    backgroundColor: '#fff7e8',
-    borderRadius: 12,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#f5d59c',
+  copyBtn: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    justifyContent: 'center',
+    backgroundColor: '#eef4ff',
   },
-  candidatesTitle: {
-    fontSize: 12,
-    color: '#a36b00',
-    fontWeight: '600',
-  },
-  candidateRow: {
-    padding: 10,
+  copyText: { fontSize: 14, fontWeight: '600', color: '#007aff' },
+  formatRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  formatText: { flex: 1, fontSize: 11, fontWeight: '500' },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  dotHollow: { borderWidth: 2, borderColor: '#ff9500' },
+  dotSpace: { backgroundColor: 'transparent' },
+  hint: { fontSize: 11, color: '#999', textAlign: 'center' },
+  adWrap: { marginTop: 4, alignItems: 'center' },
+  bottomBar: {
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    gap: 4,
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e5ea',
   },
-  candidateBank: { fontSize: 12, color: '#666', marginBottom: 2 },
-  candidateNum: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'Menlo',
-  },
-  sendBlock: { gap: 4 },
   changeRow: {
     minHeight: 44,
     flexDirection: 'row',
@@ -433,43 +625,5 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   changeLabel: { fontSize: 13, color: '#555' },
-  changeAction: { fontSize: 13, color: '#0062cc', fontWeight: '600' },
-  secondary: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#007aff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  secondaryText: { color: '#007aff', fontSize: 15, fontWeight: '500' },
-  tertiary: { paddingVertical: 12, alignItems: 'center' },
-  tertiaryText: { color: '#666', fontSize: 14 },
-  redo: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    padding: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    borderRadius: 8,
-  },
-  redoText: { color: '#666', fontSize: 10, fontWeight: '500' },
-  adWrap: { marginTop: 16, alignItems: 'center' },
-  disclaimer: {
-    fontSize: 11,
-    color: '#999',
-    textAlign: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  changeAction: { fontSize: 13, fontWeight: '600', color: '#0062cc' },
 });

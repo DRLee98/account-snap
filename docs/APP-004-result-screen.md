@@ -6,6 +6,8 @@
 - 참조문서: [OCR-002 계좌번호/은행명 파싱 로직](OCR-002-account-parser.md), [DAT-001 Account 데이터 모델](DAT-001-account-model.md), [DAT-002 로컬 DB](DAT-002-local-db.md)
 - 관계: 의존
 
+> 2026-11 화면 구성이 [APP-012 결과 화면 개편](APP-012-result-redesign.md)으로 바뀌었다. 아래는 처음 기획.
+
 ## 목적
 
 [[OCR-002]] 파싱 결과를 사용자에게 표시하고, 복사·저장(즐겨찾기)·재촬영 액션 제공.

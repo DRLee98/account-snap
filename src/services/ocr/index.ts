@@ -9,6 +9,9 @@ export {
   findBankByText,
   inferBankByAccountNumber,
   isPhoneFormatNumber,
+  matchesBankFormat,
   BANK_PATTERNS,
 } from './bankPatterns';
 export * from './types';
+export { normalizeRect } from './regions';
+export type { AccountRegions, Rect, RegionUnit } from './regions';

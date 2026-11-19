@@ -15,3 +15,4 @@ React Native 메인 앱 화면 및 기본 구조.
 | APP-009 | 영역 다시 칠하기 (Result → Crop 재진입) | [docs/SESSION-NOTES-2026-06.md#3-결과-화면--편집-분리](../docs/SESSION-NOTES-2026-06.md) | - | ✅ | ✅ |
 | APP-010 | 클립보드 계좌 인식 (텍스트 파서 공유, OCR 비용 0) | [docs/APP-010-clipboard-detect.md](../docs/APP-010-clipboard-detect.md) | [docs/OCR-002-account-parser.md](../docs/OCR-002-account-parser.md) | ✅ | ⬜ |
 | APP-011 | 주거래 은행 — 송금 앱 선택 (토스 기본, 은행 앱 복사 후 실행) | [docs/APP-011-transfer-app.md](../docs/APP-011-transfer-app.md) | - | ✅ | ⬜ |
+| APP-012 | 결과 화면 개편 — 확인 카드, 사진 색 상자, 계좌 여러 개 고르기, 추정 은행 표시 | [docs/APP-012-result-redesign.md](../docs/APP-012-result-redesign.md) | [docs/APP-004-result-screen.md](../docs/APP-004-result-screen.md) | ✅ | ⬜ |

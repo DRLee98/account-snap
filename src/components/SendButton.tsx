@@ -69,20 +69,32 @@ export function sendButtonColors(
 type Props = {
   app: TransferApp;
   onPress: () => void;
+  /** 아직 누를 수 없을 때(계좌를 고르기 전) — 흐리게 표시하고 누름을 막는다 */
+  disabled?: boolean;
+  /** 아래 줄 설명을 바꿔 쓴다 (기본: 앱 종류에 따른 설명) */
+  subtitle?: string;
 };
 
 /** 결과 화면의 송금 버튼 — 주거래 앱 아이콘과 아이콘 배경색으로 그린다. 아이콘은 왼쪽, 문구는 가운데 */
-export default function SendButton({ app, onPress }: Props) {
-  const subtitle = sendButtonSubtitle(app);
+export default function SendButton({
+  app,
+  onPress,
+  disabled = false,
+  subtitle: subtitleOverride,
+}: Props) {
+  const subtitle = subtitleOverride ?? sendButtonSubtitle(app);
+  const state = { disabled };
 
   if (!app.icon || !app.button) {
     // 계좌번호만 복사: 앱 기본 파란 버튼
     const Icon = app.mode === 'prefill' ? Send : CopyIcon;
     return (
       <TouchableOpacity
-        style={styles.plain}
+        style={[styles.plain, disabled && styles.disabled]}
         onPress={onPress}
+        disabled={disabled}
         accessibilityRole="button"
+        accessibilityState={state}
         accessibilityHint={subtitle}
       >
         <View style={styles.plainRow}>
@@ -97,8 +109,10 @@ export default function SendButton({ app, onPress }: Props) {
   const colors = sendButtonColors(app.button);
   return (
     <TouchableOpacity
-      style={[styles.brand, colors.container]}
+      style={[styles.brand, colors.container, disabled && styles.disabled]}
       onPress={onPress}
+      disabled={disabled}
+      accessibilityState={state}
       accessibilityRole="button"
       accessibilityLabel={app.sendLabel}
       accessibilityHint={subtitle}
@@ -131,6 +145,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  disabled: { opacity: 0.4 },
   icon: { width: ICON_SIZE, height: ICON_SIZE, borderRadius: 9 },
   // 아이콘은 왼쪽에 두고 문구는 버튼 가운데 — 오른쪽에 아이콘 폭만큼 비워 버튼 전체 기준으로 가운데를 맞춘다
   texts: {

@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Check, Pencil, X } from 'lucide-react-native';
-import { BANK_PATTERNS } from '../services/ocr';
+import { BANK_PATTERNS } from '../services/ocr/bankPatterns';
 
 type Props = {
   visible: boolean;

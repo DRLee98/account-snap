@@ -1,11 +1,16 @@
 import TextRecognition, {
   RecognizedText,
 } from '../../specs/NativeTextRecognition';
-import { joinReadingOrder } from './readingOrder';
+import { joinReadingOrder, TextBox } from './readingOrder';
 
 export const isDeviceOcrAvailable = (): boolean => TextRecognition != null;
 
-export type DeviceOcrResult = { text: string; confidence: number };
+export type DeviceOcrResult = {
+  text: string;
+  confidence: number;
+  /** 글자 박스 — iOS는 0~1 비율, Android는 픽셀 */
+  boxes: TextBox[];
+};
 
 /**
  * 온디바이스 텍스트 인식 (iOS Vision / Android ML Kit).
@@ -23,7 +28,7 @@ export async function recognizeOnDevice(
         ? joinReadingOrder(result.blocks)
         : result.text;
     if (!text.trim()) return null;
-    return { text, confidence: result.confidence };
+    return { text, confidence: result.confidence, boxes: result.blocks ?? [] };
   } catch {
     return null;
   }

@@ -1,6 +1,9 @@
+import { Platform } from 'react-native';
 import { recognize } from './clovaClient';
-import { joinClovaFields, parseAccount } from './clovaParser';
+import { clovaBoxes, joinClovaFields, parseAccount } from './clovaParser';
 import { recognizeOnDevice } from './deviceClient';
+import { TextBox } from './readingOrder';
+import { locateAccount, RegionUnit } from './regions';
 import { parseAccountFromText } from './textParser';
 import { ParsedAccount } from './types';
 
@@ -8,7 +11,24 @@ export type RecognizeAccountResult = {
   parsed: ParsedAccount;
   rawText: string;
   source: 'device' | 'clova';
+  /** parsed(와 candidates)의 regions 좌표 단위 */
+  regionUnit: RegionUnit;
 };
+
+/** 대표 계좌와 다른 후보마다 사진에서 읽은 자리를 붙인다 */
+function attachRegions(parsed: ParsedAccount, boxes: TextBox[] | null) {
+  if (!boxes || boxes.length === 0) return;
+  const locate = (p: ParsedAccount) => {
+    p.regions = locateAccount(boxes, {
+      accountNumber: p.accountNumber,
+      bankCode: p.bankCode,
+      holderName: p.holderName,
+      bankFromText: !!p.bankCode && !p.bankInferred,
+    });
+  };
+  locate(parsed);
+  parsed.candidates?.forEach(locate);
+}
 
 /**
  * 계좌 인식 전체 플로우: CLOVA 우선.
@@ -27,15 +47,24 @@ export async function recognizeAccount(
     const response = await recognize(imageUri);
     const parsed = parseAccount(response);
     if (!parsed) return null;
-    const rawText = joinClovaFields(response.images[0]?.fields ?? []);
-    return { parsed, rawText, source: 'clova' };
+    const fields = response.images[0]?.fields ?? [];
+    attachRegions(parsed, clovaBoxes(fields));
+    const rawText = joinClovaFields(fields);
+    return { parsed, rawText, source: 'clova', regionUnit: 'px' };
   } catch (e) {
     const device = await recognizeOnDevice(imageUri);
     const parsed = device
       ? parseAccountFromText(device.text, device.confidence)
       : null;
     if (device && parsed) {
-      return { parsed, rawText: device.text, source: 'device' };
+      attachRegions(parsed, device.boxes);
+      return {
+        parsed,
+        rawText: device.text,
+        source: 'device',
+        // iOS Vision은 0~1 비율(네이티브에서 왼쪽 위 원점으로 변환), Android ML Kit은 픽셀
+        regionUnit: Platform.OS === 'ios' ? 'normalized' : 'px',
+      };
     }
     throw e;
   }

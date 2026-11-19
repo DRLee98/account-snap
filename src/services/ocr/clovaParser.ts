@@ -19,17 +19,21 @@ const toBox = (field: ClovaField): TextBox | null => {
   };
 };
 
+/** CLOVA 필드의 글자 박스 (픽셀). 좌표가 하나라도 없으면 null */
+export function clovaBoxes(fields: ClovaField[]): TextBox[] | null {
+  const boxes = fields.map(toBox);
+  return boxes.some(b => b === null) ? null : (boxes as TextBox[]);
+}
+
 /**
  * CLOVA 필드를 읽기 순서로 이어붙인 텍스트.
  * CLOVA가 주는 필드 순서는 기울어진 사진에서 뒤섞일 수 있으므로
  * boundingPoly 좌표로 직접 정렬한다. 좌표가 하나라도 없으면 원래 순서 유지.
  */
 export function joinClovaFields(fields: ClovaField[]): string {
-  const boxes = fields.map(toBox);
-  if (boxes.some(b => b === null)) {
-    return fields.map(f => f.inferText).join(' ');
-  }
-  return joinReadingOrder(boxes as TextBox[]);
+  const boxes = clovaBoxes(fields);
+  if (!boxes) return fields.map(f => f.inferText).join(' ');
+  return joinReadingOrder(boxes);
 }
 
 export function parseAccount(response: ClovaResponse): ParsedAccount | null {

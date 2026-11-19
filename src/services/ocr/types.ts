@@ -1,3 +1,5 @@
+import type { AccountRegions } from './regions';
+
 export type ClovaInferResult = 'SUCCESS' | 'FAILURE' | 'ERROR';
 
 export type ClovaField = {
@@ -29,5 +31,9 @@ export type ParsedAccount = {
   confidence: number;
   /** 은행의 알려진 자릿수·하이픈 그룹과 맞지 않음 — 오인식 의심 */
   formatMismatch?: boolean;
+  /** 사진 글자에 은행명이 없어 계좌번호 앞자리로 추정한 은행 */
+  bankInferred?: boolean;
+  /** 사진에서 은행·계좌번호·예금주를 읽은 자리 (단위는 RecognizeAccountResult.regionUnit) */
+  regions?: AccountRegions;
   candidates?: ParsedAccount[];
 };

@@ -241,6 +241,7 @@ export function parseAccountFromText(
       accountNumber: c.digits,
       bankName: bank?.name ?? '',
       bankCode: bank?.code,
+      bankInferred: !bankFromText && !!bank,
       holderName,
       // 앞자리로 추측한 은행은 근거가 약해, 텍스트에서 은행명을 찾은 경우에만 형식 검증
       formatMismatch: bankFromText

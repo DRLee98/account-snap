@@ -20,9 +20,8 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { captureRef } from 'react-native-view-shot';
 import ImageEditor from '@react-native-community/image-editor';
 import Clipboard from '@react-native-clipboard/clipboard';
-import Toast from 'react-native-toast-message';
 import { ChevronLeft, Eraser, Eye, Scissors, X } from 'lucide-react-native';
-import { recognizeAccount, formatAccountByBank } from '../services/ocr';
+import { recognizeAccount } from '../services/ocr';
 import { createAccount } from '../services/storage';
 import { RootStackParamList } from '../navigation/types';
 
@@ -192,7 +191,7 @@ export default function CropScreen() {
       );
       return;
     }
-    const { parsed, rawText: ocrRawText } = result;
+    const { parsed, rawText: ocrRawText, regionUnit } = result;
     const account = createAccount({
       accountNumber: parsed.accountNumber,
       bankName: parsed.bankName || '(은행 미확인)',
@@ -202,15 +201,13 @@ export default function CropScreen() {
       originalImageUri: sourceUri,
       ocrRawText,
     });
+    // 복사됐다는 알림은 결과 화면의 "목록에 저장" 알림이 함께 알려 준다
     Clipboard.setString(parsed.accountNumber);
-    Toast.show({
-      type: 'success',
-      text1: '계좌번호 복사됨',
-      text2: formatAccountByBank(parsed.accountNumber, parsed.bankCode),
-    });
+    const { candidates, ...primary } = parsed;
     navigation.replace('Result', {
       accountId: account.id,
-      candidates: parsed.candidates,
+      options: [primary, ...(candidates ?? [])],
+      regionUnit,
     });
   };
 
