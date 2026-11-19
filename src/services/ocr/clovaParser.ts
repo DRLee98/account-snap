@@ -5,8 +5,9 @@ import { TextBox, joinReadingOrder } from './readingOrder';
 const toBox = (field: ClovaField): TextBox | null => {
   const vertices = field.boundingPoly?.vertices;
   if (!vertices || vertices.length === 0) return null;
-  const xs = vertices.map(v => v.x);
-  const ys = vertices.map(v => v.y);
+  // 0인 좌표는 JSON에서 빠질 수 있다 ({ "y": 12 }) — 빠진 값은 0으로 본다
+  const xs = vertices.map(v => v.x ?? 0);
+  const ys = vertices.map(v => v.y ?? 0);
   const x = Math.min(...xs);
   const y = Math.min(...ys);
   return {

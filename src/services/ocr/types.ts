@@ -6,7 +6,8 @@ export type ClovaField = {
   inferText: string;
   inferConfidence: number;
   boundingPoly?: {
-    vertices: Array<{ x: number; y: number }>;
+    // 0인 좌표는 빠질 수 있다
+    vertices: Array<{ x?: number; y?: number }>;
   };
 };
 

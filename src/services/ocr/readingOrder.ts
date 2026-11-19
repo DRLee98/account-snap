@@ -19,6 +19,10 @@ export type TextBox = {
 
 /** 같은 줄로 볼 최소 세로 겹침 비율 (작은 쪽 높이 기준) */
 const SAME_LINE_OVERLAP = 0.5;
+/** 줄 조각을 합칠 때: 두 줄의 세로 띠가 이만큼(줄 높이 기준) 겹치면 같은 줄 */
+const ROW_MERGE_OVERLAP = 0.3;
+/** 가로로 이만큼(좁은 쪽 너비 기준) 겹치는 상자가 있으면 위아래 다른 줄 */
+const STACKED_OVERLAP = 0.3;
 
 const verticalOverlapRatio = (a: TextBox, b: TextBox): number => {
   const top = Math.max(a.y, b.y);
@@ -29,13 +33,54 @@ const verticalOverlapRatio = (a: TextBox, b: TextBox): number => {
   return minHeight > 0 ? overlap / minHeight : 0;
 };
 
+const isFiniteBox = (b: TextBox) =>
+  [b.x, b.y, b.width, b.height].every(Number.isFinite);
+
+const horizontalOverlapRatio = (a: TextBox, b: TextBox): number => {
+  const overlap = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+  const minWidth = Math.min(a.width, b.width);
+  return overlap > 0 && minWidth > 0 ? overlap / minWidth : 0;
+};
+
+const medianHeight = (line: TextBox[]): number => {
+  const hs = line.map(b => b.height).sort((a, b) => a - b);
+  return hs[Math.floor(hs.length / 2)];
+};
+
+/**
+ * 두 줄이 사실 한 줄의 조각인지.
+ * - 가로로 겹치는 상자가 있으면 위아래로 쌓인 다른 줄이다
+ * - 아니면 두 줄의 세로 띠(맨 위~맨 아래)가 줄 높이의 30% 이상 겹칠 때 같은 줄
+ */
+function isSameRow(a: TextBox[], b: TextBox[]): boolean {
+  if (a.some(x => b.some(y => horizontalOverlapRatio(x, y) > STACKED_OVERLAP)))
+    return false;
+  const top = Math.max(
+    Math.min(...a.map(t => t.y)),
+    Math.min(...b.map(t => t.y)),
+  );
+  const bottom = Math.min(
+    Math.max(...a.map(t => t.y + t.height)),
+    Math.max(...b.map(t => t.y + t.height)),
+  );
+  const minHeight = Math.min(medianHeight(a), medianHeight(b));
+  return minHeight > 0 && (bottom - top) / minHeight >= ROW_MERGE_OVERLAP;
+}
+
 /**
  * 왼쪽부터 훑으며 "바로 왼쪽 이웃"과 세로로 겹치면 같은 줄로 묶는다.
  * 줄 전체의 평균 y가 아니라 마지막 박스와 비교하므로, 기울어진 줄도
  * 점진적으로 올라가거나 내려가는 것을 따라갈 수 있다.
+ *
+ * 마지막 박스와만 비교하면, 가운데 한 덩어리가 반 칸쯤 처진 줄(휘어진 간판·원근)에서
+ * 그 덩어리가 혼자 새 줄로 떨어지고 다음 덩어리가 그걸 건너뛰어 앞 줄에 붙는다
+ * ("352 8311 0141 93" → "352 8311 93" + "0141"). 그래서 묶은 뒤 같은 줄의 조각을 다시 합치고,
+ * 줄 안은 x 순서로 정렬한다.
  */
 export function sortReadingOrder(boxes: TextBox[]): TextBox[] {
-  const byX = [...boxes].sort((a, b) => a.x - b.x || a.y - b.y);
+  // 좌표가 깨진 상자(NaN)는 정렬을 망가뜨리므로 맨 뒤에 원래 순서대로 둔다
+  const broken = boxes.filter(b => !isFiniteBox(b));
+  const byX = boxes.filter(isFiniteBox).sort((a, b) => a.x - b.x || a.y - b.y);
   const lines: TextBox[][] = [];
 
   for (const box of byX) {
@@ -52,6 +97,23 @@ export function sortReadingOrder(boxes: TextBox[]): TextBox[] {
     else lines.push([box]);
   }
 
+  // 같은 줄의 조각 합치기 — 더 합칠 게 없을 때까지
+  let merged = true;
+  while (merged) {
+    merged = false;
+    for (let i = 0; i < lines.length && !merged; i++) {
+      for (let j = i + 1; j < lines.length; j++) {
+        if (isSameRow(lines[i], lines[j])) {
+          lines[i] = [...lines[i], ...lines[j]];
+          lines.splice(j, 1);
+          merged = true;
+          break;
+        }
+      }
+    }
+  }
+  lines.forEach(line => line.sort((a, b) => a.x - b.x));
+
   // 줄 순서는 각 줄의 첫 박스(왼쪽 끝) 세로 중심 기준 — 기울어져도 왼쪽 끝끼리 비교하면 안정적
   lines.sort((a, b) => {
     const ca = a[0].y + a[0].height / 2;
@@ -59,7 +121,7 @@ export function sortReadingOrder(boxes: TextBox[]): TextBox[] {
     return ca - cb;
   });
 
-  return lines.flat();
+  return [...lines.flat(), ...broken];
 }
 
 /** 읽기 순서로 정렬해 공백으로 이어붙인 텍스트 */
