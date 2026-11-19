@@ -50,6 +50,7 @@ import {
 } from '../services/ocr/bankPatterns';
 import type { ParsedAccount } from '../services/ocr/types';
 import { RootStackParamList } from '../navigation/types';
+import { COLORS } from '../theme/colors';
 
 export const UNKNOWN_BANK = '(은행 미확인)';
 const WARN = '#d26a00';
@@ -306,7 +307,11 @@ export default function ResultScreen() {
                   사진에서 계좌 {options.length}개를 찾았어요
                 </Text>
                 <Text style={styles.switchAction}>다른 계좌로 바꾸기</Text>
-                <ChevronRight size={14} color="#007aff" strokeWidth={2.4} />
+                <ChevronRight
+                  size={14}
+                  color={COLORS.primary}
+                  strokeWidth={2.4}
+                />
               </Pressable>
             ) : null}
 
@@ -442,7 +447,7 @@ export default function ResultScreen() {
               주거래 은행 · {transferApp.name}
             </Text>
             <Text style={styles.changeAction}>변경</Text>
-            <ChevronRight size={14} color="#0062cc" strokeWidth={2.4} />
+            <ChevronRight size={14} color={COLORS.primary} strokeWidth={2.4} />
           </TouchableOpacity>
         </View>
       )}
@@ -552,7 +557,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   switchText: { flex: 1, fontSize: 13, color: '#555' },
-  switchAction: { fontSize: 13, fontWeight: '600', color: '#007aff' },
+  switchAction: { fontSize: 13, fontWeight: '600', color: COLORS.primary },
   card: {
     paddingHorizontal: 16,
     paddingVertical: 4,
@@ -599,9 +604,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
     justifyContent: 'center',
-    backgroundColor: '#eef4ff',
+    backgroundColor: COLORS.primaryTint,
   },
-  copyText: { fontSize: 14, fontWeight: '600', color: '#007aff' },
+  copyText: { fontSize: 14, fontWeight: '600', color: COLORS.primary },
   formatRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   formatText: { flex: 1, fontSize: 11, fontWeight: '500' },
   dot: { width: 8, height: 8, borderRadius: 4 },
@@ -625,5 +630,5 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   changeLabel: { fontSize: 13, color: '#555' },
-  changeAction: { fontSize: 13, fontWeight: '600', color: '#0062cc' },
+  changeAction: { fontSize: 13, fontWeight: '600', color: COLORS.primary },
 });

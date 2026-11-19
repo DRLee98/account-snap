@@ -27,6 +27,7 @@ import { recognize, parseAccount } from '../services/ocr';
 import { formatAccountNumber } from '../models/account';
 import { RootStackParamList } from '../navigation/types';
 import AdFitBanner, { AD_CLIENT_IDS } from '../components/AdFitBanner';
+import { COLORS } from '../theme/colors';
 
 export default function CameraScreen() {
   const navigation =
@@ -84,9 +85,17 @@ export default function CameraScreen() {
           계좌 사진을 찍기 위해 카메라 권한을 허용해주세요.
         </Text>
         <View style={{ height: 16 }} />
-        <Button title="권한 요청" onPress={requestPermission} />
+        <Button
+          title="권한 요청"
+          color={COLORS.primaryOnDark}
+          onPress={requestPermission}
+        />
         <View style={{ height: 10 }} />
-        <Button title="설정 열기" onPress={() => Linking.openSettings()} />
+        <Button
+          title="설정 열기"
+          color={COLORS.primaryOnDark}
+          onPress={() => Linking.openSettings()}
+        />
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 20 }]}>
           <TouchableOpacity style={styles.sideBtn} onPress={openList}>
             <ListIcon size={26} color="#fff" strokeWidth={2} />

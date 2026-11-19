@@ -19,6 +19,7 @@ import ResultScreen from '../screens/ResultScreen';
 import TransferAppScreen from '../screens/TransferAppScreen';
 import { RootStackParamList } from './types';
 import { markUsed, getAccount } from '../services/storage';
+import { COLORS } from '../theme/colors';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -36,6 +37,12 @@ const linking: LinkingOptions<RootStackParamList> = {
   async getInitialURL() {
     return null;
   },
+};
+
+/** 헤더 뒤로 화살표·버튼은 앱 기본색(남색), 제목은 검정 */
+const stackScreenOptions: NativeStackNavigationOptions = {
+  headerTintColor: COLORS.primary,
+  headerTitleStyle: { color: '#000' },
 };
 
 /**
@@ -57,7 +64,10 @@ const resultScreenOptions = ({
 export default function AppNavigator() {
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
-      <Stack.Navigator initialRouteName="Camera">
+      <Stack.Navigator
+        initialRouteName="Camera"
+        screenOptions={stackScreenOptions}
+      >
         <Stack.Screen
           name="Camera"
           component={CameraScreen}

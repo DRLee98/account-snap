@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Check, Pencil, X } from 'lucide-react-native';
 import { BANK_PATTERNS } from '../services/ocr/bankPatterns';
+import { COLORS } from '../theme/colors';
 
 type Props = {
   visible: boolean;
@@ -111,7 +112,11 @@ export default function BankPicker({
                       {item.name}
                     </Text>
                     {selected ? (
-                      <Check size={18} color="#007aff" strokeWidth={2.4} />
+                      <Check
+                        size={18}
+                        color={COLORS.primary}
+                        strokeWidth={2.4}
+                      />
                     ) : null}
                   </TouchableOpacity>
                 );
@@ -121,7 +126,7 @@ export default function BankPicker({
                   style={styles.customTrigger}
                   onPress={() => setCustomMode(true)}
                 >
-                  <Pencil size={16} color="#007aff" strokeWidth={2.2} />
+                  <Pencil size={16} color={COLORS.primary} strokeWidth={2.2} />
                   <Text style={styles.customTriggerText}>직접 입력</Text>
                 </TouchableOpacity>
               }
@@ -178,7 +183,7 @@ const styles = StyleSheet.create({
   },
   rowSelected: { backgroundColor: '#f0f7ff' },
   rowText: { fontSize: 15, color: '#333' },
-  rowTextSelected: { color: '#007aff', fontWeight: '600' },
+  rowTextSelected: { color: COLORS.primary, fontWeight: '600' },
   customTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -186,7 +191,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 18,
   },
-  customTriggerText: { color: '#007aff', fontSize: 15, fontWeight: '500' },
+  customTriggerText: { color: COLORS.primary, fontSize: 15, fontWeight: '500' },
   customBox: { padding: 20, gap: 14 },
   customInput: {
     backgroundColor: '#f7f7f7',
@@ -211,7 +216,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     borderRadius: 10,
-    backgroundColor: '#007aff',
+    backgroundColor: COLORS.primary,
   },
   customConfirmText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });

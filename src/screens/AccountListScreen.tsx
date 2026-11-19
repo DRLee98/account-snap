@@ -40,6 +40,7 @@ import { parseBackup, serializeBackup } from '../services/backup';
 import SwipeableListItem from '../components/SwipeableListItem';
 import AppGroup from '../specs/NativeAppGroup';
 import { RootStackParamList } from '../navigation/types';
+import { COLORS } from '../theme/colors';
 
 type Tab = 'favorites' | 'history';
 
@@ -136,7 +137,7 @@ export default function AccountListScreen() {
             accessibilityRole="button"
             accessibilityLabel="백업"
           >
-            <Archive size={20} color="#007aff" strokeWidth={2} />
+            <Archive size={20} color={COLORS.primary} strokeWidth={2} />
           </Pressable>
           <Pressable
             onPress={() => navigation.navigate('TransferApp')}
@@ -145,7 +146,7 @@ export default function AccountListScreen() {
             accessibilityRole="button"
             accessibilityLabel="주거래 은행 설정"
           >
-            <Settings size={20} color="#007aff" strokeWidth={2} />
+            <Settings size={20} color={COLORS.primary} strokeWidth={2} />
           </Pressable>
         </View>
       ),
@@ -330,9 +331,9 @@ export default function AccountListScreen() {
           icon={
             <Star
               size={14}
-              color={tab === 'favorites' ? '#007aff' : '#666'}
+              color={tab === 'favorites' ? COLORS.primary : '#666'}
               strokeWidth={2}
-              fill={tab === 'favorites' ? '#007aff' : 'transparent'}
+              fill={tab === 'favorites' ? COLORS.primary : 'transparent'}
             />
           }
           label="즐겨찾기"
@@ -343,7 +344,7 @@ export default function AccountListScreen() {
           icon={
             <Clock
               size={14}
-              color={tab === 'history' ? '#007aff' : '#666'}
+              color={tab === 'history' ? COLORS.primary : '#666'}
               strokeWidth={2}
             />
           }
@@ -409,10 +410,10 @@ const styles = StyleSheet.create({
   tabContent: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tabActive: {
     borderBottomWidth: 2,
-    borderBottomColor: '#007aff',
+    borderBottomColor: COLORS.primary,
   },
   tabText: { fontSize: 14, color: '#666' },
-  tabTextActive: { color: '#007aff', fontWeight: '600' },
+  tabTextActive: { color: COLORS.primary, fontWeight: '600' },
   list: { padding: 16, gap: 10 },
   listEmptyContainer: { flexGrow: 1, justifyContent: 'center' },
   card: {
@@ -432,7 +433,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 18,
-    backgroundColor: '#e5f0ff',
+    backgroundColor: COLORS.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -452,7 +453,7 @@ const styles = StyleSheet.create({
   clearBtn: { color: '#c33', fontSize: 12, width: 60, textAlign: 'center' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   settingsBtn: { marginLeft: 4 },
-  sendText: { color: '#007aff', fontSize: 14, fontWeight: '600' },
+  sendText: { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
   swipeWrap: { marginBottom: 10, overflow: 'hidden', borderRadius: 12 },
   swipeBtn: {
     width: 80,

@@ -18,8 +18,9 @@ import {
   getTransferApp,
   setTransferAppId,
 } from '../services/transfer/preference';
+import { COLORS } from '../theme/colors';
 
-const ACCENT = '#007aff';
+const ACCENT = COLORS.primary;
 
 const SECTIONS: { mode: TransferMode; title: string; desc?: string }[] = [
   {

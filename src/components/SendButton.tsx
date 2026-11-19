@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Copy as CopyIcon, Send } from 'lucide-react-native';
 import type { TransferApp, TransferAppButton } from '../services/transfer/apps';
+import { COLORS } from '../theme/colors';
 
 /** 버튼 아래 줄 설명 — 누르면 무슨 일이 일어나는지 */
 export function sendButtonSubtitle(app: TransferApp): string | undefined {
@@ -168,12 +169,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: '#007aff',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
   },
   plainRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   plainText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  plainSub: { color: '#e8f1ff', fontSize: 12 },
+  plainSub: { color: 'rgba(255, 255, 255, 0.85)', fontSize: 12 },
 });

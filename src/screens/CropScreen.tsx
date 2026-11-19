@@ -29,6 +29,7 @@ import {
   strokesBounds,
   strokesToPath,
 } from '../services/crop/strokes';
+import { COLORS } from '../theme/colors';
 
 /** 못 읽었을 때 화면 안에 띄우는 안내 */
 type Failure = { title: string; desc: string };
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderRadius: 12,
-    backgroundColor: '#007aff',
+    backgroundColor: COLORS.primaryOnDark,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -6,6 +6,7 @@ import SendButton, {
   sendButtonSubtitle,
 } from '../src/components/SendButton';
 import { findTransferApp, TRANSFER_APPS } from '../src/services/transfer/apps';
+import { COLORS } from '../src/theme/colors';
 
 const app = (id: string) => {
   const found = findTransferApp(id);
@@ -108,12 +109,12 @@ test('신한 슈퍼SOL: 진한 배경이라 흰 글씨', async () => {
   ]);
 });
 
-test('계좌번호만 복사: 아이콘 없이 기본 파란 버튼', async () => {
+test('계좌번호만 복사: 아이콘 없이 앱 기본색(남색) 버튼', async () => {
   const root = await render('copy');
   expect(root.findAllByType(Image)).toHaveLength(0);
   const button = root.findByType(TouchableOpacity);
   expect(StyleSheet.flatten(button.props.style).backgroundColor).toBe(
-    '#007aff',
+    COLORS.primary,
   );
   expect(textOf(root).map(t => t.text)).toEqual(['계좌번호 복사하기']);
 });
