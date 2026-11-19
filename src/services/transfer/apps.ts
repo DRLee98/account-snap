@@ -34,6 +34,19 @@ export type TransferAppId =
   | 'kyongnam'
   | 'copy';
 
+/**
+ * 결과 화면 송금 버튼 색 — 버튼 배경을 아이콘 배경색에 맞춘다 (docs/APP-011 "송금 버튼").
+ * 값은 App Store 아이콘(240px)에서 잰 색이다.
+ */
+export type TransferAppButton = {
+  /** 아이콘 배경색. 그라데이션 아이콘은 왼쪽 위 모서리 색 */
+  background: string;
+  /** 배경 위 글씨 — 흰색·노란색 배경은 dark(검정), 진한 배경은 light(흰색) */
+  text: 'dark' | 'light';
+  /** 흰 배경 아이콘만: 흰색을 뺀 대표색으로 옅은 그림자를 둘러 배경과 구분한다 */
+  shadow?: string;
+};
+
 export type TransferApp = {
   id: TransferAppId;
   name: string;
@@ -43,6 +56,8 @@ export type TransferApp = {
   /** 선택 화면 이름 아래 설명 */
   hint?: string;
   icon?: ImageSourcePropType;
+  /** 없으면(계좌번호만 복사) 앱 기본 파란 버튼 */
+  button?: TransferAppButton;
   ios?: { schemes: string[]; appStoreId: string };
   android?: { packages: string[] };
   /** 복사할 때 은행명을 붙일지 — KB스타뱅킹은 '은행명 계좌번호'를 이체 화면이 자동 인식 */
@@ -58,6 +73,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: '토스로 송금하기',
     mode: 'prefill',
     icon: require('../../../assets/transfer-apps/toss.png'),
+    button: { background: '#FFFFFF', text: 'dark', shadow: '#005CFC' },
     ios: { schemes: ['supertoss'], appStoreId: '839333328' },
     android: { packages: ['viva.republica.toss'] },
   },
@@ -67,6 +83,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: '카카오페이로 송금하기',
     mode: 'prefill',
     icon: require('../../../assets/transfer-apps/kakaopay.png'),
+    button: { background: '#FFEB00', text: 'dark' },
     // 송금은 카카오톡 안의 카카오페이에서 열린다
     ios: { schemes: ['kakaotalk'], appStoreId: '362057947' },
     android: { packages: ['com.kakao.talk'] },
@@ -78,6 +95,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     mode: 'copyLaunch',
     hint: '복사한 계좌를 이체 화면이 알아봐요',
     icon: require('../../../assets/transfer-apps/kb.png'),
+    button: { background: '#FFCC00', text: 'dark' },
     ios: { schemes: ['kbbank'], appStoreId: '373742138' },
     android: { packages: ['com.kbstar.kbbank'] },
     copyWithBankName: true,
@@ -88,6 +106,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: '신한 슈퍼SOL로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/shinhan.png'),
+    button: { background: '#2A96FF', text: 'light' },
     ios: { schemes: ['supersol', 'shinhansol'], appStoreId: '357484932' },
     android: { packages: ['com.shinhan.sbanking'] },
   },
@@ -97,6 +116,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: '우리WON뱅킹으로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/woori.png'),
+    button: { background: '#FFFFFF', text: 'dark', shadow: '#0028A0' },
     ios: { schemes: ['newsmartpib'], appStoreId: '1470181651' },
     android: { packages: ['com.wooribank.smart.npib'] },
   },
@@ -106,6 +126,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: '하나원큐로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/hana.png'),
+    button: { background: '#009178', text: 'light' },
     ios: { schemes: ['hanapush'], appStoreId: '6743190232' },
     android: { packages: ['com.hanabank.oqf', 'com.kebhana.hanapush'] },
   },
@@ -115,6 +136,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: 'NH올원뱅크로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/nhallone.png'),
+    button: { background: '#19973C', text: 'light' },
     ios: { schemes: ['nhallone', 'nhallonebank'], appStoreId: '1641628055' },
     android: { packages: ['com.nonghyup.nhallonebank', 'nh.smart.allonebank'] },
   },
@@ -124,6 +146,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: 'NH스마트뱅킹으로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/nhsmart.png'),
+    button: { background: '#007DDD', text: 'light' },
     ios: { schemes: ['newnhsmartbanking'], appStoreId: '1444712671' },
     android: { packages: ['nh.smart.banking'] },
   },
@@ -133,6 +156,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: 'IBK i-ONE Bank로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/ibk.png'),
+    button: { background: '#FFFFFF', text: 'dark', shadow: '#104C9B' },
     ios: { schemes: ['ionebank', 'ibkone'], appStoreId: '1460543865' },
     android: { packages: ['com.ibk.android.ionebank'] },
   },
@@ -142,6 +166,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: '카카오뱅크로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/kakaobank.png'),
+    button: { background: '#FEE102', text: 'dark' },
     ios: { schemes: ['kakaobank'], appStoreId: '1258016944' },
     android: { packages: ['com.kakaobank.channel'] },
   },
@@ -151,6 +176,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: '케이뱅크로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/kbank.png'),
+    button: { background: '#0114A7', text: 'light' },
     ios: { schemes: ['ukbanksmartbanknonloginpay'], appStoreId: '1178872627' },
     android: { packages: ['com.kbankwith.smartbank'] },
   },
@@ -160,6 +186,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: '우체국뱅킹으로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/epost.png'),
+    button: { background: '#FFFFFF', text: 'dark', shadow: '#CE20DA' },
     ios: { schemes: ['com.epost.psf.sd'], appStoreId: '554920991' },
     android: { packages: ['com.epost.psf.sdsi'] },
   },
@@ -169,6 +196,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: 'MG더뱅킹으로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/mg.png'),
+    button: { background: '#0F5EFF', text: 'light' },
     ios: { schemes: ['kfccsb'], appStoreId: '425089902' },
     android: { packages: ['com.smg.spbs'] },
   },
@@ -178,6 +206,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: '신협ON뱅크로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/cu.png'),
+    button: { background: '#FFFFFF', text: 'dark', shadow: '#1E45EC' },
     ios: { schemes: ['cuonbank'], appStoreId: '1484456647' },
     android: { packages: ['kr.co.cu.onbank'] },
   },
@@ -187,6 +216,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: 'iM뱅크로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/im.png'),
+    button: { background: '#FFFFFF', text: 'dark', shadow: '#05C7A7' },
     ios: { schemes: ['mbanking'], appStoreId: '1067748687' },
     android: { packages: ['kr.co.dgb.dgbm'] },
   },
@@ -196,6 +226,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: 'BNK부산은행으로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/busan.png'),
+    button: { background: '#FFFFFF', text: 'dark', shadow: '#D61C24' },
     ios: { schemes: ['bslink'], appStoreId: '1445137607' },
     android: { packages: ['kr.co.busanbank.mbp'] },
   },
@@ -206,6 +237,7 @@ export const TRANSFER_APPS: TransferApp[] = [
     sendLabel: 'BNK경남은행으로 송금하기',
     mode: 'copyLaunch',
     icon: require('../../../assets/transfer-apps/kyongnam.png'),
+    button: { background: '#D71820', text: 'light' },
     android: { packages: ['com.knb.psb'] },
   },
   {

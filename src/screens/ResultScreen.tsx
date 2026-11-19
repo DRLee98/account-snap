@@ -23,12 +23,12 @@ import {
   ChevronRight,
   Copy as CopyIcon,
   Paintbrush,
-  Send,
   Star,
   Tag,
   User,
 } from 'lucide-react-native';
 import AdFitBanner, { AD_CLIENT_IDS } from '../components/AdFitBanner';
+import SendButton from '../components/SendButton';
 import { Account, normalizeAccountNumber } from '../models/account';
 import {
   deleteAccount,
@@ -278,25 +278,7 @@ export default function ResultScreen() {
       )}
 
       <View style={styles.sendBlock}>
-        <TouchableOpacity
-          style={styles.primary}
-          onPress={handleSend}
-          accessibilityRole="button"
-        >
-          <View style={styles.primaryRow}>
-            {transferApp.mode === 'prefill' ? (
-              <Send size={18} color="#fff" strokeWidth={2.2} />
-            ) : (
-              <CopyIcon size={18} color="#fff" strokeWidth={2.2} />
-            )}
-            <Text style={styles.primaryText}>{transferApp.sendLabel}</Text>
-          </View>
-          {transferApp.mode === 'copyLaunch' ? (
-            <Text style={styles.primarySub}>
-              계좌번호를 복사하고 앱을 열어요
-            </Text>
-          ) : null}
-        </TouchableOpacity>
+        <SendButton app={transferApp} onPress={handleSend} />
         <TouchableOpacity
           style={styles.changeRow}
           onPress={openTransferAppSettings}
@@ -443,19 +425,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Menlo',
   },
   sendBlock: { gap: 4 },
-  primary: {
-    minHeight: 54,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: '#007aff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  primaryRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  primaryText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  primarySub: { color: '#e8f1ff', fontSize: 12 },
   changeRow: {
     minHeight: 44,
     flexDirection: 'row',
