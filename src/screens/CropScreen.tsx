@@ -1,10 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   LayoutChangeEvent,
-  Modal,
   PixelRatio,
   StyleSheet,
   Text,
@@ -20,12 +18,29 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { captureRef } from 'react-native-view-shot';
 import ImageEditor from '@react-native-community/image-editor';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { ChevronLeft, Eraser, Eye, Scissors, X } from 'lucide-react-native';
+import { ChevronLeft, CircleAlert, Undo2 } from 'lucide-react-native';
 import { recognizeAccount } from '../services/ocr';
 import { createAccount } from '../services/storage';
 import { RootStackParamList } from '../navigation/types';
+import {
+  canRead,
+  Point,
+  Stroke,
+  strokesBounds,
+  strokesToPath,
+} from '../services/crop/strokes';
 
-type Point = { x: number; y: number };
+/** 못 읽었을 때 화면 안에 띄우는 안내 */
+type Failure = { title: string; desc: string };
+
+const NOT_FOUND: Failure = {
+  title: '칠한 곳에서 계좌번호를 찾지 못했어요',
+  desc: '숫자가 모두 칠해졌는지 확인하고 다시 읽어 주세요.\n글씨가 흐리면 가까이서 다시 찍으면 잘 읽혀요.',
+};
+const READ_ERROR: Failure = {
+  title: '계좌번호를 읽지 못했어요',
+  desc: '인터넷 연결을 확인하고 다시 읽어 주세요.',
+};
 
 const PADDING = 12;
 const BRUSH_SIZE = 36;
@@ -43,11 +58,12 @@ export default function CropScreen() {
     h: number;
   } | null>(null);
   const [layout, setLayout] = useState<{ w: number; h: number } | null>(null);
-  const [points, setPoints] = useState<Point[]>([]);
+  // 손을 뗐다 다시 칠하면 새 획 — 은행명·계좌번호가 다른 줄이어도 나눠 칠할 수 있다
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [loading, setLoading] = useState(false);
-  const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [failure, setFailure] = useState<Failure | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
-  const pointsRef = useRef<Point[]>([]);
+  const strokesRef = useRef<Stroke[]>([]);
 
   if (!imgNaturalSize) {
     Image.getSize(sourceUri, (w, h) => setImgNaturalSize({ w, h }));
@@ -91,39 +107,39 @@ export default function CropScreen() {
         .minDistance(0)
         .shouldCancelWhenOutside(false)
         .onBegin(e => {
-          pointsRef.current = [{ x: e.x, y: e.y }];
-          setPoints([{ x: e.x, y: e.y }]);
+          const start: Point = { x: e.x, y: e.y };
+          strokesRef.current = [...strokesRef.current, [start]];
+          setStrokes(strokesRef.current);
+          setFailure(null);
         })
         .onUpdate(e => {
-          pointsRef.current.push({ x: e.x, y: e.y });
-          if (pointsRef.current.length % 3 === 0) {
-            setPoints([...pointsRef.current]);
-          }
+          const current = strokesRef.current[strokesRef.current.length - 1];
+          if (!current) return;
+          current.push({ x: e.x, y: e.y });
+          if (current.length % 3 === 0) setStrokes([...strokesRef.current]);
         })
         .onFinalize(() => {
-          setPoints([...pointsRef.current]);
+          setStrokes([...strokesRef.current]);
         }),
     [],
   );
 
-  const pathData = useMemo(() => {
-    if (points.length === 0) return '';
-    return points
-      .map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`)
-      .join(' ');
-  }, [points]);
+  const pathData = useMemo(() => strokesToPath(strokes), [strokes]);
+  const readable = canRead(strokes);
 
-  const handleClear = () => {
-    pointsRef.current = [];
-    setPoints([]);
-    setPreviewUri(null);
+  const updateStrokes = (next: Stroke[]) => {
+    strokesRef.current = next;
+    setStrokes(next);
+    setFailure(null);
   };
+  const handleUndo = () => updateStrokes(strokesRef.current.slice(0, -1));
+  const handleClear = () => updateStrokes([]);
 
   const produceCroppedUri = async (): Promise<string | null> => {
-    if (!fitted || !imgNaturalSize || points.length < 2) {
-      Alert.alert('영역 선택', '계좌번호 영역을 손가락으로 칠해주세요.');
-      return null;
-    }
+    const bounds = fitted
+      ? strokesBounds(strokes, BRUSH_SIZE / 2 + PADDING, fitted)
+      : null;
+    if (!fitted || !imgNaturalSize || !readable || !bounds) return null;
     setIsCapturing(true);
     await new Promise(r => requestAnimationFrame(() => r(null)));
     await new Promise(r => requestAnimationFrame(() => r(null)));
@@ -137,18 +153,7 @@ export default function CropScreen() {
         ? capturedRaw
         : `file://${capturedRaw}`;
 
-      const xs = points.map(p => p.x);
-      const ys = points.map(p => p.y);
-      const minX = Math.max(0, Math.min(...xs) - BRUSH_SIZE / 2 - PADDING);
-      const minY = Math.max(0, Math.min(...ys) - BRUSH_SIZE / 2 - PADDING);
-      const maxX = Math.min(
-        fitted.w,
-        Math.max(...xs) + BRUSH_SIZE / 2 + PADDING,
-      );
-      const maxY = Math.min(
-        fitted.h,
-        Math.max(...ys) + BRUSH_SIZE / 2 + PADDING,
-      );
+      const { minX, minY, maxX, maxY } = bounds;
 
       const pr = PixelRatio.get();
       const cropData = {
@@ -169,26 +174,11 @@ export default function CropScreen() {
     }
   };
 
-  const handleShowPreview = async () => {
-    setLoading(true);
-    try {
-      const uri = await produceCroppedUri();
-      if (uri) setPreviewUri(uri);
-    } catch (e: any) {
-      Alert.alert('미리보기 에러', e?.message ?? String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const runOCR = async (uri: string) => {
-    // 온디바이스 OCR 우선, 미검출/저신뢰 시 CLOVA 폴백
+    // CLOVA 우선, CLOVA 호출이 실패했을 때만 기기 OCR
     const result = await recognizeAccount(uri);
     if (!result) {
-      Alert.alert(
-        'OCR 결과 없음',
-        '계좌번호를 찾지 못했어요. 영역을 다시 칠해서 시도해주세요.',
-      );
+      setFailure(NOT_FOUND);
       return;
     }
     const { parsed, rawText: ocrRawText, regionUnit } = result;
@@ -211,28 +201,15 @@ export default function CropScreen() {
     });
   };
 
-  const handleRecognizeDirect = async () => {
+  const handleRead = async () => {
+    setFailure(null);
     setLoading(true);
     try {
       const uri = await produceCroppedUri();
       if (!uri) return;
       await runOCR(uri);
-    } catch (e: any) {
-      Alert.alert('OCR 에러', e?.message ?? String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRecognizeFromPreview = async () => {
-    if (!previewUri) return;
-    const uri = previewUri;
-    setPreviewUri(null);
-    setLoading(true);
-    try {
-      await runOCR(uri);
-    } catch (e: any) {
-      Alert.alert('OCR 에러', e?.message ?? String(e));
+    } catch {
+      setFailure(READ_ERROR);
     } finally {
       setLoading(false);
     }
@@ -240,10 +217,20 @@ export default function CropScreen() {
 
   return (
     <View style={styles.fill}>
-      <View
-        style={[styles.imageBox, { marginTop: insets.top }]}
-        onLayout={onContainerLayout}
-      >
+      <View style={[styles.topBar, { marginTop: insets.top }]}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="다시 찍기"
+        >
+          <ChevronLeft size={24} color="#fff" strokeWidth={2.2} />
+          <Text style={styles.backText}>다시 찍기</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>계좌번호 칠하기</Text>
+      </View>
+
+      <View style={styles.imageBox} onLayout={onContainerLayout}>
         {fitted && (
           <GestureDetector gesture={panGesture}>
             <View
@@ -316,196 +303,165 @@ export default function CropScreen() {
           </GestureDetector>
         )}
 
-        {points.length === 0 && (
-          <View pointerEvents="none" style={styles.guideHint}>
-            <Text style={styles.guideText}>
-              계좌번호 영역을 손가락으로 칠해주세요
+        {failure ? (
+          <View style={styles.failure} accessibilityRole="alert">
+            <CircleAlert size={18} color="#a36b00" strokeWidth={2.2} />
+            <View style={styles.failureTexts}>
+              <Text style={styles.failureTitle}>{failure.title}</Text>
+              <Text style={styles.failureDesc}>{failure.desc}</Text>
+            </View>
+          </View>
+        ) : (
+          <View pointerEvents="none" style={styles.hintWrap}>
+            <Text style={styles.hint}>
+              은행명과 계좌번호를 칠해 주세요 · 여러 번 나눠 칠해도 돼요
             </Text>
           </View>
         )}
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-        >
-          <ChevronLeft size={20} color="#fff" />
-        </TouchableOpacity>
       </View>
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
         <TouchableOpacity
-          style={styles.eraseBtn}
+          style={[styles.outlineBtn, strokes.length === 0 && styles.dim]}
+          onPress={handleUndo}
+          disabled={strokes.length === 0 || loading}
+          accessibilityRole="button"
+        >
+          <Undo2 size={18} color="#fff" strokeWidth={2} />
+          <Text style={styles.outlineText}>되돌리기</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.outlineBtn, strokes.length === 0 && styles.dim]}
           onPress={handleClear}
-          disabled={points.length === 0}
+          disabled={strokes.length === 0 || loading}
+          accessibilityRole="button"
         >
-          <Eraser
-            size={18}
-            color={points.length === 0 ? 'rgba(255,255,255,0.3)' : '#fff'}
-          />
+          <Text style={styles.outlineText}>전체 지우기</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.previewBtn, points.length < 2 && { opacity: 0.4 }]}
-          onPress={handleShowPreview}
-          disabled={points.length < 2 || loading}
+          style={[styles.readBtn, !readable && styles.dim]}
+          onPress={handleRead}
+          disabled={!readable || loading}
+          accessibilityRole="button"
         >
-          {/* <Eye size={18} color="#fff" /> */}
-          <Text style={styles.previewBtnText}>미리보기</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.cropBtn, points.length < 2 && { opacity: 0.4 }]}
-          onPress={handleRecognizeDirect}
-          disabled={points.length < 2 || loading}
-        >
-          {/* <Scissors size={20} color="#fff" /> */}
-          <Text style={styles.cropText}>계좌 읽기</Text>
+          <Text style={styles.readText}>
+            {failure ? '다시 읽기' : '계좌 읽기'}
+          </Text>
         </TouchableOpacity>
       </View>
 
       {loading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.loadingText}>처리 중...</Text>
-        </View>
-      )}
-
-      <Modal
-        visible={!!previewUri}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPreviewUri(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>미리보기</Text>
-              <TouchableOpacity
-                style={styles.modalCloseBtn}
-                onPress={() => setPreviewUri(null)}
-              >
-                <X size={22} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.modalImageBox}>
-              {previewUri && (
-                <Image
-                  source={{ uri: previewUri }}
-                  style={StyleSheet.absoluteFill}
-                  resizeMode="contain"
-                />
-              )}
-            </View>
+          <View style={styles.loadingCard} accessibilityRole="progressbar">
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.loadingTitle}>칠한 곳을 읽고 있어요</Text>
+            <Text style={styles.loadingDesc}>보통 1~2초면 끝나요</Text>
           </View>
         </View>
-      </Modal>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: '#000' },
-  imageBox: { flex: 1, position: 'relative' },
-  previewBox: { flex: 1, position: 'relative', backgroundColor: '#fff' },
-  guideHint: {
-    position: 'absolute',
-    top: 24,
-    left: 24,
-    right: 24,
-    padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: 10,
+  topBar: {
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  guideText: { color: '#fff', textAlign: 'center', fontSize: 13 },
+  backBtn: {
+    position: 'absolute',
+    left: 4,
+    top: 4,
+    height: 44,
+    paddingLeft: 4,
+    paddingRight: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backText: { color: '#fff', fontSize: 15 },
+  title: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  imageBox: { flex: 1, position: 'relative' },
+  hintWrap: {
+    position: 'absolute',
+    top: 12,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  hint: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    color: '#fff',
+    fontSize: 13,
+  },
+  failure: {
+    position: 'absolute',
+    top: 12,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: '#fff6e5',
+  },
+  failureTexts: { flex: 1, gap: 2 },
+  failureTitle: { fontSize: 14, fontWeight: '700', color: '#8a5300' },
+  failureDesc: { fontSize: 12, lineHeight: 17, color: '#8a5300' },
   bottomBar: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingTop: 12,
-    gap: 12,
+    gap: 10,
     backgroundColor: '#000',
   },
-  backBtn: {
-    position: 'absolute',
-    top: 24,
-    left: 10,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  backText: { color: '#fff', fontSize: 14 },
-  eraseBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cropBtn: {
-    flex: 1,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: '#007aff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  cropText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  previewBtn: {
+  outlineBtn: {
     height: 50,
     paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: 'rgba(255,255,255,0.35)',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
   },
-  previewBtnText: { color: '#fff', fontSize: 14, fontWeight: '500' },
-  modalBackdrop: {
+  outlineText: { color: '#fff', fontSize: 14, fontWeight: '500' },
+  readBtn: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  modalCard: {
-    backgroundColor: '#1c1c1e',
-    borderRadius: 18,
-    padding: 16,
-    gap: 14,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  modalTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  modalCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  modalImageBox: {
-    height: 260,
-    backgroundColor: '#fff',
+    height: 50,
     borderRadius: 12,
-    overflow: 'hidden',
+    backgroundColor: '#007aff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  readText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  dim: { opacity: 0.35 },
   loadingOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loadingText: { color: '#fff', marginTop: 14, fontSize: 14 },
+  loadingCard: {
+    width: 260,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    backgroundColor: 'rgba(28,28,30,0.95)',
+    alignItems: 'center',
+    gap: 10,
+  },
+  loadingTitle: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  loadingDesc: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
 });
