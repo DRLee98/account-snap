@@ -117,3 +117,16 @@ test('계좌번호만 복사: 아이콘 없이 기본 파란 버튼', async () =
   );
   expect(textOf(root).map(t => t.text)).toEqual(['계좌번호 복사하기']);
 });
+
+test('아이콘은 왼쪽, 문구는 버튼 가운데 (오른쪽에 아이콘 폭만큼 여백)', async () => {
+  const root = await render('woori');
+  const icon = StyleSheet.flatten(root.findByType(Image).props.style);
+  const texts = root.findByType(Image).parent!
+    .children[1] as ReactTestRenderer.ReactTestInstance;
+  const style = StyleSheet.flatten(texts.props.style);
+  expect(style.alignItems).toBe('center');
+  expect(style.marginRight).toBe(icon.width);
+  for (const t of texts.findAllByType(Text)) {
+    expect(StyleSheet.flatten(t.props.style).textAlign).toBe('center');
+  }
+});

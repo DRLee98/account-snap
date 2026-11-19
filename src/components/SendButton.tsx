@@ -71,7 +71,7 @@ type Props = {
   onPress: () => void;
 };
 
-/** 결과 화면의 송금 버튼 — 주거래 앱 아이콘과 아이콘 배경색으로 그린다 */
+/** 결과 화면의 송금 버튼 — 주거래 앱 아이콘과 아이콘 배경색으로 그린다. 아이콘은 왼쪽, 문구는 가운데 */
 export default function SendButton({ app, onPress }: Props) {
   const subtitle = sendButtonSubtitle(app);
 
@@ -121,6 +121,8 @@ export default function SendButton({ app, onPress }: Props) {
   );
 }
 
+const ICON_SIZE = 36;
+
 const styles = StyleSheet.create({
   brand: {
     minHeight: 60,
@@ -129,10 +131,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  icon: { width: 36, height: 36, borderRadius: 9 },
-  texts: { flex: 1, minWidth: 0, paddingLeft: 12, gap: 2 },
-  title: { fontSize: 15, fontWeight: '600', lineHeight: 20 },
-  subtitle: { fontSize: 11, lineHeight: 14 },
+  icon: { width: ICON_SIZE, height: ICON_SIZE, borderRadius: 9 },
+  // 아이콘은 왼쪽에 두고 문구는 버튼 가운데 — 오른쪽에 아이콘 폭만큼 비워 버튼 전체 기준으로 가운데를 맞춘다
+  texts: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: ICON_SIZE,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    gap: 2,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  subtitle: { fontSize: 11, lineHeight: 14, textAlign: 'center' },
   plain: {
     minHeight: 54,
     paddingVertical: 12,
