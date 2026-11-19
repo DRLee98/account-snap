@@ -1,6 +1,7 @@
 import {
   sortReadingOrder,
   joinReadingOrder,
+  repairSwappedTexts,
 } from '../src/services/ocr/readingOrder';
 import type { TextBox } from '../src/services/ocr/readingOrder';
 import { parseAccount } from '../src/services/ocr/clovaParser';
@@ -118,6 +119,88 @@ describe('sortReadingOrder', () => {
 
   it('빈 입력은 빈 문자열', () => {
     expect(joinReadingOrder([])).toBe('');
+  });
+});
+
+describe('repairSwappedTexts — 텍스트가 엉뚱한 상자에 붙어 온 경우', () => {
+  /**
+   * 실제 CLOVA 응답에서 그대로 옮긴 좌표 (2026-11, "농협 / 정원욱 352 8311 0141 93" 간판).
+   * 상자 위치는 맞는데 "93"과 "0141"의 inferText가 서로 바뀌어 붙어 왔다:
+   * 네 번째 숫자 상자는 폭 497(4글자 크기)인데 텍스트가 "93",
+   * 다섯 번째는 폭 289(2글자 크기)인데 텍스트가 "0141"이다.
+   */
+  const realClovaBoxes: TextBox[] = [
+    { text: '농협', confidence: 0.628, x: 757, y: 394, width: 431, height: 258 },
+    { text: '/', confidence: 0.628, x: 1225, y: 441, width: 110, height: 184 },
+    { text: '정원욱', confidence: 0.989, x: 1368, y: 410, width: 668, height: 276 },
+    { text: '352', confidence: 0.873, x: 527, y: 711, width: 393, height: 213 },
+    { text: '8311', confidence: 0.873, x: 948, y: 730, width: 476, height: 216 },
+    { text: '93', confidence: 0.96, x: 1450, y: 755, width: 497, height: 219 },
+    { text: '0141', confidence: 0.96, x: 1991, y: 779, width: 289, height: 218 },
+  ];
+
+  it('실측 CLOVA 응답에서 뒤바뀐 "93"/"0141"을 상자 너비로 바로잡는다', () => {
+    expect(joinReadingOrder(realClovaBoxes)).toBe('농협 / 정원욱 352 8311 0141 93');
+    expect(parseAccount(clovaResponse(realClovaBoxes))?.accountNumber).toBe(
+      '3528311014193',
+    );
+  });
+
+  it('글자당 폭이 일관되면 아무것도 바꾸지 않는다', () => {
+    const line = [
+      box('352', 100, 100, 390, 210),
+      box('8311', 520, 100, 520, 210),
+      box('0141', 1060, 100, 520, 210),
+      box('93', 1600, 100, 260, 210),
+    ];
+    expect(repairSwappedTexts(line).map(b => b.text)).toEqual([
+      '352',
+      '8311',
+      '0141',
+      '93',
+    ]);
+  });
+
+  it('원근으로 오른쪽이 조금 커진 정도로는 바꾸지 않는다', () => {
+    // 글자당 폭이 왼쪽 120 → 오른쪽 150으로 완만히 커지는 정상적인 줄
+    const line = [
+      box('352', 100, 100, 360, 210),
+      box('8311', 500, 100, 520, 210),
+      box('0141', 1060, 100, 560, 210),
+      box('93', 1660, 100, 300, 210),
+    ];
+    expect(repairSwappedTexts(line).map(b => b.text)).toEqual([
+      '352',
+      '8311',
+      '0141',
+      '93',
+    ]);
+  });
+
+  it('맞아떨어지는 배치가 없으면 원본을 그대로 둔다', () => {
+    // 한 상자만 폭이 엉뚱하게 넓다 — 바꿔 끼울 짝이 없으므로 손대지 않는다
+    const line = [
+      box('352', 100, 100, 360, 210),
+      box('8311', 500, 100, 480, 210),
+      box('0141', 1020, 100, 480, 210),
+      box('93', 1540, 100, 900, 210),
+    ];
+    expect(repairSwappedTexts(line).map(b => b.text)).toEqual([
+      '352',
+      '8311',
+      '0141',
+      '93',
+    ]);
+  });
+
+  it('숫자 덩어리가 3개 미만이면 기준을 못 믿으므로 손대지 않는다', () => {
+    const line = [box('352', 100, 100, 900, 210), box('93', 1100, 100, 120, 210)];
+    expect(repairSwappedTexts(line).map(b => b.text)).toEqual(['352', '93']);
+  });
+
+  it('한글·기호 상자는 폭 기준에서 제외한다', () => {
+    // 폭이 제각각인 한글이 섞여 있어도 숫자 줄 보정은 그대로 동작한다
+    expect(joinReadingOrder(realClovaBoxes)).toContain('농협 / 정원욱');
   });
 });
 
