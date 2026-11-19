@@ -65,12 +65,12 @@ describe('buildTossSendUrl', () => {
       buildTossSendUrl({
         bankName: '농협은행',
         bankCode: '011',
-        accountNumber: '352-1805-9843-03',
+        accountNumber: '301-2468-1357-02',
       }),
     ).toBe(
       `supertoss://send?bank=${encodeURIComponent(
         '농협',
-      )}&accountNo=3521805984303&amount=`,
+      )}&accountNo=3012468135702&amount=`,
     );
   });
 });

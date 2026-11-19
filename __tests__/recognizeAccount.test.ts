@@ -27,11 +27,11 @@ describe('recognizeAccount — CLOVA 우선', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('CLOVA가 성공하면 기기 내 OCR을 호출하지 않는다', async () => {
-    mockClova.mockResolvedValue(clovaWith(['농협', '352-1805-9843-03']));
+    mockClova.mockResolvedValue(clovaWith(['농협', '301-2468-1357-02']));
     const r = await recognizeAccount('file:///x.jpg');
     expect(r?.source).toBe('clova');
-    expect(r?.parsed.accountNumber).toBe('3521805984303');
-    expect(r?.rawText).toBe('농협 352-1805-9843-03');
+    expect(r?.parsed.accountNumber).toBe('3012468135702');
+    expect(r?.rawText).toBe('농협 301-2468-1357-02');
     expect(mockDevice).not.toHaveBeenCalled();
   });
 
@@ -44,12 +44,12 @@ describe('recognizeAccount — CLOVA 우선', () => {
   it('CLOVA 호출이 실패하면(오프라인 등) 기기 내 OCR로 대신한다', async () => {
     mockClova.mockRejectedValue(new Error('Network request failed'));
     mockDevice.mockResolvedValue({
-      text: '농협 352-1805-9843-03',
+      text: '농협 301-2468-1357-02',
       confidence: 0.9,
     });
     const r = await recognizeAccount('file:///x.jpg');
     expect(r?.source).toBe('device');
-    expect(r?.parsed.accountNumber).toBe('3521805984303');
+    expect(r?.parsed.accountNumber).toBe('3012468135702');
   });
 
   it('CLOVA도 실패하고 기기 내 OCR도 못 읽으면 CLOVA 오류를 던진다', async () => {

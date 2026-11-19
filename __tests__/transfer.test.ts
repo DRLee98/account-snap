@@ -30,7 +30,7 @@ jest.mock('../src/specs/NativeAppLauncher', () => ({
 const nh = {
   bankName: '농협은행',
   bankCode: '011',
-  accountNumber: '3521805984303',
+  accountNumber: '3012468135702',
 };
 const kb = {
   bankName: '국민은행',
@@ -89,7 +89,7 @@ describe('링크와 복사 문구', () => {
   });
 
   it('다른 은행 앱은 숫자만 복사한다', () => {
-    expect(clipboardTextFor(app('shinhan'), nh)).toBe('3521805984303');
+    expect(clipboardTextFor(app('shinhan'), nh)).toBe('3012468135702');
     expect(
       clipboardTextFor(app('kb'), {
         bankName: '(은행 미확인)',
@@ -99,13 +99,13 @@ describe('링크와 복사 문구', () => {
   });
 
   it('카카오페이 링크는 3자리 코드와 숫자만 넣고, 코드를 모르면 파라미터를 뺀다', () => {
-    expect(kakaoPayUrl({ ...nh, accountNumber: '352-1805-9843-03' })).toBe(
-      'kakaotalk://kakaopay/money/to/bank?bank_code=011&bank_account_number=3521805984303',
+    expect(kakaoPayUrl({ ...nh, accountNumber: '301-2468-1357-02' })).toBe(
+      'kakaotalk://kakaopay/money/to/bank?bank_code=011&bank_account_number=3012468135702',
     );
     expect(
-      kakaoPayUrl({ bankName: '농협', accountNumber: '3521805984303' }),
+      kakaoPayUrl({ bankName: '농협', accountNumber: '3012468135702' }),
     ).toBe(
-      'kakaotalk://kakaopay/money/to/bank?bank_code=011&bank_account_number=3521805984303',
+      'kakaotalk://kakaopay/money/to/bank?bank_code=011&bank_account_number=3012468135702',
     );
     expect(
       kakaoPayUrl({ bankName: '(은행 미확인)', accountNumber: '1234567890' }),
@@ -116,7 +116,7 @@ describe('링크와 복사 문구', () => {
     expect(deepLinkFor(app('toss'), nh)).toBe(
       `supertoss://send?bank=${encodeURIComponent(
         '농협',
-      )}&accountNo=3521805984303&amount=`,
+      )}&accountNo=3012468135702&amount=`,
     );
     expect(deepLinkFor(app('kb'), nh)).toBeUndefined();
   });
@@ -172,7 +172,7 @@ describe('sendWithApp', () => {
   it('토스가 없으면 계좌번호를 복사하고 안내를 띄운다', async () => {
     openURL.mockRejectedValue(new Error('no app'));
     expect(await run('toss')).toBe('failed');
-    expect(Clipboard.setString).toHaveBeenCalledWith('3521805984303');
+    expect(Clipboard.setString).toHaveBeenCalledWith('3012468135702');
     expect(alert).toHaveBeenCalledTimes(1);
     const buttons = alert.mock.calls[0][2];
     expect(buttons.map((b: { text: string }) => b.text)).toEqual([
@@ -232,7 +232,7 @@ describe('sendWithApp', () => {
 
   it('복사만 하기: 앱을 열지 않는다', async () => {
     expect(await run('copy')).toBe('copied');
-    expect(Clipboard.setString).toHaveBeenCalledWith('3521805984303');
+    expect(Clipboard.setString).toHaveBeenCalledWith('3012468135702');
     expect(openURL).not.toHaveBeenCalled();
   });
 

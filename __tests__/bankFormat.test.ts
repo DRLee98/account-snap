@@ -7,7 +7,7 @@ import { parseAccountFromText } from '../src/services/ocr/textParser';
 
 describe('matchesBankFormat', () => {
   it('은행 형식과 맞는 번호는 통과', () => {
-    expect(matchesBankFormat('3521805984303', '011', '352-1805-9843-03')).toBe(
+    expect(matchesBankFormat('3012468135702', '011', '301-2468-1357-02')).toBe(
       true,
     );
     expect(
@@ -15,18 +15,18 @@ describe('matchesBankFormat', () => {
     ).toBe(true);
   });
 
-  it('하이픈 그룹이 다르면 불일치 (실제 오인식 352-18015-94-13)', () => {
-    expect(matchesBankFormat('352180159413', '011', '352-18015-94-13')).toBe(
+  it('하이픈 그룹이 다르면 불일치 (실제 오인식 301-24618-35-12)', () => {
+    expect(matchesBankFormat('301246183512', '011', '301-24618-35-12')).toBe(
       false,
     );
   });
 
   it('자릿수가 은행 형식에 없으면 불일치', () => {
-    expect(matchesBankFormat('35218059843', '011')).toBe(false);
+    expect(matchesBankFormat('30124681357', '011')).toBe(false);
   });
 
   it('공백으로만 쪼개진 번호는 자릿수만 검사', () => {
-    expect(matchesBankFormat('3528311014193', '011', '352 8311 0141 93')).toBe(
+    expect(matchesBankFormat('1234567890123', '011', '123 4567 8901 23')).toBe(
       true,
     );
   });
@@ -52,14 +52,14 @@ describe('matchesBankFormat', () => {
 describe('parseAccountFromText — formatMismatch 표시', () => {
   it('오인식된 번호에 formatMismatch가 붙는다', () => {
     const p = parseAccountFromText(
-      '계좌이처 농협 소떡소떡 000 떡꼬치2 352-18015-94-13 반선과',
+      '계좌이처 농협 소떡소떡 000 떡꼬치2 301-24618-35-12 긴민스',
       1,
     );
     expect(p?.formatMismatch).toBe(true);
   });
 
   it('정상 번호는 formatMismatch가 아니다', () => {
-    const p = parseAccountFromText('계좌이체 농협 352-1805-9843-03 박성관');
+    const p = parseAccountFromText('계좌이체 농협 301-2468-1357-02 김민수');
     expect(p?.formatMismatch).toBe(false);
   });
 });
